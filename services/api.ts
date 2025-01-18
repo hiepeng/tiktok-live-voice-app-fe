@@ -1,4 +1,5 @@
 import { BACKEND_URL } from '../constants/config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface RequestConfig extends RequestInit {
   token?: string;
@@ -12,14 +13,18 @@ class ApiService {
   }
 
   private async request<T>(endpoint: string, config: RequestConfig = {}): Promise<T> {
-    const { token, ...restConfig } = config;
+    const token = await AsyncStorage.getItem('user-storage');
+    console.log(token, "token");
+    const parsedToken = token ? JSON.parse(token).state.token : null;
+    const { token: configToken, ...restConfig } = config;
+    
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(config.headers as Record<string, string>),
     };
 
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+    if (parsedToken) {
+      headers['Authorization'] = `Bearer ${parsedToken}`;
     }
 
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
