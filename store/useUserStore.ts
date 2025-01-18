@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../services/api';
+import { ProfileResponse } from '@/services/userInterface';
 
 interface UserState {
   token: string | null;
@@ -17,14 +18,6 @@ interface UserState {
 interface LoginResponse {
   data: {
     accessToken: string;
-  }
-}
-
-interface ProfileResponse {
-  data: {
-    _id: string;
-    email: string;
-    avatar: string;
   }
 }
 

@@ -1,104 +1,138 @@
-import React, { useState } from 'react';
-import { 
-  StyleSheet, 
-  View, 
-  SafeAreaView, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  Alert,
-  ScrollView 
-} from 'react-native';
-import { BACKEND_URL } from '../../constants/config';
-import { MaterialIcons } from '@expo/vector-icons';
-import { api } from '@/services/api';
+import React, { useState, useEffect } from "react";
+import { StyleSheet, View, SafeAreaView, Text, TextInput, TouchableOpacity, Alert, ScrollView } from "react-native";
+import { api } from "@/services/api";
+import { useSocket } from "../../hooks/useSocket";
+import { useCommentStore } from "@/store/useCommentStore";
 
 interface UrlItem {
   taskId: string;
   url: string;
-  status: 'idle' | 'pending' | 'decoding' | 'running';
+  status: "idle" | "pending" | "decoding" | "running" | "stop" | "stopping";
+  createdAt: Date;
 }
 
 interface StartResponse {
   data: {
     taskId: string;
-  }
+    createdAt: string; // ISO string from server
+  };
+}
+
+interface ApiResponse {
+  data: {
+    _id: string;
+    source: string;
+    status: string;
+    createdAt: string;
+  }[];
+}
+
+interface Comment {
+  id: string;
+  text: string;
+  author: {
+    name: string;
+    id: string;
+    avatar: string;
+  };
+  timestamp: number;
+  platform: string;
 }
 
 const FullScreenWebView: React.FC = () => {
-  const [urls, setUrls] = useState<UrlItem[]>([{ 
-    taskId: '',
-    url: 'https://www.tiktok.com/@didi5.7/live', 
-    status: 'idle' 
-  }]);
+  const socket = useSocket();
+  const [urls, setUrls] = useState<UrlItem[]>([]);
+  const [newUrl, setNewUrl] = useState("");
 
-  const addNewUrl = () => {
-    setUrls([...urls, { 
-      taskId: '',
-      url: '', 
-      status: 'idle' 
-    }]);
-  };
+  useEffect(() => {
+    const fetchInitialUrls = async () => {
+      try {
+        const response = await api.get<ApiResponse>("/comments/active");
+        console.log(response, "response");
+        if (response?.data && Array.isArray(response.data)) {
+          const activeUrls = response.data.map(item => ({
+            taskId: item._id,
+            url: item.source,
+            status: item.status as UrlItem["status"],
+            createdAt: new Date(item.createdAt)
+          }));
 
-  const updateUrl = (taskId: string, newUrl: string) => {
-    setUrls(urls.map(item => 
-      item.taskId === taskId ? { ...item, url: newUrl } : item
-    ));
-  };
+          if (activeUrls.length > 0) {
+            setUrls(activeUrls);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch initial URLs:", error);
+      }
+    };
 
-  const removeUrl = (taskId: string) => {
-    if (urls.length > 1) {
-      setUrls(urls.filter(item => item.taskId !== taskId));
-    }
-  };
+    fetchInitialUrls();
+  }, []);
 
-  const handleSubmit = async (taskId: string): Promise<void> => {
-    const urlItem = urls.find(item => item.taskId === taskId);
-    if (!urlItem || !urlItem.url.trim()) {
-      Alert.alert('Error', 'Please enter a valid URL');
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on("message-task", message => {
+      if (message.act === "update") {
+        const content = message.info;
+        setUrls(prevUrls =>
+          prevUrls.map(item => (item.taskId === content.taskId ? { ...item, status: "running" } : item)),
+        );
+
+        if (message.data.name === "comment") {
+          message.data.forEach((comment: Comment) => {
+            useCommentStore.getState().addComment(comment);
+          });
+        } else if (message.data.name === "metadata") {
+        }
+      }
+    });
+
+    socket.on("error", error => {
+      Alert.alert("Error", error.message);
+    });
+
+    return () => {
+      socket.off("tiktok-comment");
+      socket.off("message-task");
+      socket.off("error");
+    };
+  }, [socket]);
+
+  const handleAddUrl = async () => {
+    if (!newUrl.trim()) {
+      Alert.alert("Error", "Please enter a valid URL");
       return;
     }
 
     try {
-      setUrls(urls.map(item =>
-        item.taskId === taskId ? { ...item, status: 'pending' } : item
-      ));
+      const res = await api.post<StartResponse>("/comments/start", { url: newUrl });
 
-      const res = await api.post<StartResponse>('/comments/start', { url: urlItem.url });
-      
-      setUrls(urls.map(item =>
-        item.taskId === taskId ? { 
-          ...item, 
+      setUrls(prevUrls => [
+        {
           taskId: res.data.taskId,
-          status: 'decoding' 
-        } : item
-      ));
+          url: newUrl,
+          status: "decoding",
+          createdAt: new Date(res.data.createdAt),
+        },
+        ...prevUrls,
+      ]);
 
-      Alert.alert('Success', 'Started decoding TikTok live stream');
+      setNewUrl("");
+      Alert.alert("Success", "Started decoding TikTok live stream");
     } catch (error) {
-      setUrls(urls.map(item =>
-        item.taskId === taskId ? { ...item, status: 'idle' } : item
-      ));
-      Alert.alert('Error', error instanceof Error ? error.message : 'Unknown error occurred');
+      Alert.alert("Error", error instanceof Error ? error.message : "Unknown error occurred");
     }
   };
 
   const stopStream = async (taskId: string) => {
     try {
-      setUrls(urls.map(item =>
-        item.taskId === taskId ? { ...item, status: 'pending' } : item
-      ));
-
-      await api.post('/comments/stop', { taskId });
-
-      setUrls(urls.map(item =>
-        item.taskId === taskId ? { ...item, status: 'idle' } : item
-      ));
+      setUrls(urls.map(item => (item.taskId === taskId ? { ...item, status: "pending" } : item)));
+      await api.post("/comments/stop", { taskId });
+      setUrls(urls.map(item => (item.taskId === taskId ? { ...item, status: "stop" } : item)));
     } catch (error) {
-      Alert.alert('Error', 'Failed to stop stream');
-      setUrls(urls.map(item =>
-        item.taskId === taskId ? { ...item, status: 'running' } : item
-      ));
+      Alert.alert("Error", "Failed to stop stream");
+      setUrls(urls.map(item => (item.taskId === taskId ? { ...item, status: "running" } : item)));
     }
   };
 
@@ -107,54 +141,85 @@ const FullScreenWebView: React.FC = () => {
       <ScrollView style={styles.scrollView}>
         <View style={styles.container}>
           <Text style={styles.title}>TikTok Live Comment Reader</Text>
-          
-          {urls.map((item) => (
-            <View key={item.taskId} style={styles.urlContainer}>
-              <View style={styles.inputContainer}>
-                <TextInput
-                  style={styles.input}
-                  value={item.url}
-                  onChangeText={(text) => updateUrl(item.taskId, text)}
-                  placeholder="Enter TikTok Live URL"
-                  placeholderTextColor="#999"
-                />
-                {urls.length > 1 && (
-                  <TouchableOpacity 
-                    onPress={() => removeUrl(item.taskId)}
-                    style={styles.removeButton}
-                  >
-                    <MaterialIcons name="remove-circle" size={24} color="#FF4444" />
-                  </TouchableOpacity>
-                )}
-              </View>
 
-              <TouchableOpacity
-                style={[
-                  styles.button,
-                  { 
-                    backgroundColor: item.status === 'running' ? '#FF4444' : 
-                                    item.status === 'decoding' ? '#FFA500' : '#4CAF50'
-                  },
-                  (item.status === 'pending' || item.status === 'decoding') && styles.buttonDisabled
-                ]}
-                onPress={() => item.status === 'running' ? stopStream(item.taskId) : handleSubmit(item.taskId)}
-                disabled={item.status === 'pending' || item.status === 'decoding'}
-              >
-                <Text style={styles.buttonText}>
-                  {item.status === 'running' ? 'Stop' : 
-                   item.status === 'decoding' ? 'Decoding...' : 'Start'}
-                </Text>
-              </TouchableOpacity>
+          <View style={styles.inputSection}>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                value={newUrl}
+                onChangeText={setNewUrl}
+                placeholder="Enter TikTok Live URL"
+                placeholderTextColor="#999"
+              />
             </View>
-          ))}
+            <TouchableOpacity style={[styles.button, { backgroundColor: "#4CAF50" }]} onPress={handleAddUrl}>
+              <Text style={styles.buttonText}>Add Stream</Text>
+            </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity 
-            style={styles.addButton} 
-            onPress={addNewUrl}
-          >
-            <MaterialIcons name="add-circle" size={24} color="#4CAF50" />
-            <Text style={styles.addButtonText}>Add URL</Text>
-          </TouchableOpacity>
+          {urls
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+            .map(item => (
+              <View key={item.taskId} style={styles.urlContainer}>
+                <View style={styles.streamInfo}>
+                  <Text style={styles.urlText} numberOfLines={1}>
+                    {item.url}
+                  </Text>
+                  <View style={styles.metaContainer}>
+                    <Text style={styles.timeText}>{new Date(item.createdAt).toLocaleString()}</Text>
+                    <Text
+                      style={[
+                        styles.statusText,
+                        {
+                          color:
+                            item.status === "running"
+                              ? "#4CAF50"
+                              : item.status === "decoding"
+                                ? "#FFA500"
+                                : item.status === "stopping"
+                                  ? "#FFA500"
+                                  : item.status === "stop"
+                                    ? "#FF4444"
+                                    : "#999",
+                        },
+                      ]}
+                    >
+                      {item.status}
+                    </Text>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={[
+                    styles.button,
+                    {
+                      backgroundColor:
+                        item.status === "running"
+                          ? "#FF4444"
+                          : item.status === "stopping"
+                            ? "#FFA500"
+                            : item.status === "decoding"
+                              ? "#FFA500"
+                              : "#999",
+                    },
+                    (item.status === "pending" || item.status === "stop" || item.status === "stopping") &&
+                      styles.buttonDisabled,
+                  ]}
+                  onPress={() => (item.status === "running" ? stopStream(item.taskId) : null)}
+                  disabled={item.status === "pending" || item.status === "stop" || item.status === "stopping"}
+                >
+                  <Text style={styles.buttonText}>
+                    {item.status === "running"
+                      ? "Stop"
+                      : item.status === "stopping"
+                        ? "Stopping..."
+                        : item.status === "decoding"
+                          ? "Decoding..."
+                          : "Stopped"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ))}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -164,7 +229,7 @@ const FullScreenWebView: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   scrollView: {
     flex: 1,
@@ -175,66 +240,69 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 20,
-    textAlign: 'center',
-    color: '#333',
+    textAlign: "center",
+    color: "#333",
+  },
+  inputSection: {
+    marginBottom: 20,
+  },
+  streamInfo: {
+    flex: 1,
+    marginRight: 10,
+  },
+  urlText: {
+    fontSize: 14,
+    color: "#333",
+    marginBottom: 4,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "500",
   },
   urlContainer: {
-    marginBottom: 15,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f5f5f5",
+    padding: 10,
+    borderRadius: 10,
     marginBottom: 10,
   },
-  input: {
-    flex: 1,
-    height: 50,
-    borderWidth: 1.5,
-    borderColor: '#ddd',
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    fontSize: 16,
-    backgroundColor: '#f8f8f8',
-  },
-  removeButton: {
-    marginLeft: 10,
-  },
   button: {
-    height: 45,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
+    paddingHorizontal: 20,
+    height: 40,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
   },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10,
-    padding: 10,
+  buttonDisabled: {
+    opacity: 0.5,
   },
-  addButtonText: {
-    marginLeft: 8,
+  input: {
+    height: 50,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    marginBottom: 10,
     fontSize: 16,
-    color: '#4CAF50',
-    fontWeight: '600',
+    backgroundColor: "#fff",
+  },
+  metaContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 4,
+  },
+  timeText: {
+    fontSize: 12,
+    color: "#666",
   },
 });
 

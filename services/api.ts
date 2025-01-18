@@ -14,7 +14,6 @@ class ApiService {
 
   private async request<T>(endpoint: string, config: RequestConfig = {}): Promise<T> {
     const token = await AsyncStorage.getItem('user-storage');
-    console.log(token, "token");
     const parsedToken = token ? JSON.parse(token).state.token : null;
     const { token: configToken, ...restConfig } = config;
     
