@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "Tiktok Live Voice",
-    "slug": "tiktok-live-voice",
+    "name": "T Live Voice",
+    "slug": "t-live-voice",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logo.jpeg",
+    "icon": "./assets/images/logo.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/splash.jpeg",
+      "image": "./assets/images/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -17,10 +17,10 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/logo.jpeg",
+        "foregroundImage": "./assets/images/logo.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.hiepnvna.coverrn"
+      "package": "com.hiepnvna.tlivevoice"
     },
     "web": {
       "bundler": "metro",
@@ -38,7 +38,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "ae08fea4-843b-4b7c-908f-ad525878d9a2"
+        "projectId": "f6c47bf1-fdab-4e63-bd20-e626587ab54b"
       }
     }
   }
