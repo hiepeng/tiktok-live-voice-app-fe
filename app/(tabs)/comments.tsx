@@ -3,6 +3,7 @@ import { StyleSheet, View, SafeAreaView, Text, FlatList, Image, Dimensions, Touc
 import { useCommentStore } from "@/store/useCommentStore";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import Header from '../../components/Header';
 
 const { width } = Dimensions.get("window");
 
@@ -71,40 +72,43 @@ const CommentsScreen = () => {
     </LinearGradient>
   );
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <LinearGradient colors={["#4c669f", "#3b5998", "#192f6a"]} style={styles.header}>
-        <View style={styles.headerContent}>
-          <Text style={styles.title}>Live Comments</Text>
-          {comments.length > 0 && (
-            <TouchableOpacity onPress={clearComments} style={styles.clearButton}>
-              <Ionicons name="trash-outline" size={24} color="#fff" />
-            </TouchableOpacity>
-          )}
-        </View>
-        <Text style={styles.subtitle}>{comments.length} comments</Text>
-      </LinearGradient>
+  const clearButton = (
+    <TouchableOpacity onPress={clearComments}>
+      <Ionicons name="trash-outline" size={24} color="#000" />
+    </TouchableOpacity>
+  );
 
-      <FlatList
-        ref={flatListRef}
-        data={comments}
-        renderItem={renderComment}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        onLayout={() => setIsLayoutComplete(true)}
-        onScroll={handleScroll}
-        onContentSizeChange={() => {
-          if (isAtEnd) {
-            scrollToEnd();
-          }
-        }}
-        maintainVisibleContentPosition={{
-          minIndexForVisible: 0,
-          autoscrollToTopThreshold: 10,
-        }}
-      />
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <Header title="Comments" rightComponent={clearButton} />
+      <View style={styles.listWrapper}>
+        <FlatList
+          ref={flatListRef}
+          data={comments}
+          renderItem={renderComment}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          onLayout={() => setIsLayoutComplete(true)}
+          onScroll={handleScroll}
+          onContentSizeChange={() => {
+            if (isAtEnd) {
+              scrollToEnd();
+            }
+          }}
+          maintainVisibleContentPosition={{
+            minIndexForVisible: 0,
+            autoscrollToTopThreshold: 10,
+          }}
+        />
+        <LinearGradient
+          colors={['rgba(255,255,255,1)', 'rgba(255,255,255,0)']}
+          style={styles.fadeGradient}
+          pointerEvents="none"
+        />
+      </View>
 
       {!isAtEnd && !isAutoScrolling && comments.length > 0 && (
         <TouchableOpacity 
@@ -122,44 +126,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-  },
-  header: {
-    padding: 20,
-    paddingTop: 40,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-    paddingHorizontal: 20,
-  },
-  clearButton: {
-    position: "absolute",
-    right: 20,
-    padding: 8,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#fff",
-    textAlign: "center",
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#rgba(255,255,255,0.8)",
-    textAlign: "center",
-    marginTop: 5,
   },
   listContainer: {
     padding: 16,
@@ -254,6 +220,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+  },
+  listWrapper: {
+    flex: 1,
+    position: 'relative',
+  },
+  fadeGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 50,
+    zIndex: 1,
   },
 });
 

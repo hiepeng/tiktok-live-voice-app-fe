@@ -4,6 +4,7 @@ import { api } from "@/services/api";
 import { useSocket } from "../../hooks/useSocket";
 import { useCommentStore } from "@/store/useCommentStore";
 import { MaterialIcons } from "@expo/vector-icons";
+import Header from '../../components/Header';
 
 interface Metadata {
   viewCount?: number;
@@ -158,7 +159,8 @@ const FullScreenWebView: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <Header title="Home" />
       <ScrollView style={styles.scrollView}>
         <View style={styles.container}>
           <Text style={styles.title}>TikTok Live Comment Reader</Text>
@@ -174,7 +176,7 @@ const FullScreenWebView: React.FC = () => {
               />
             </View>
             <TouchableOpacity style={[styles.button, { backgroundColor: "#4CAF50" }]} onPress={handleAddUrl}>
-              <Text style={styles.buttonText}>Add Stream</Text>
+              <Text style={styles.buttonText}>Add Link</Text>
             </TouchableOpacity>
           </View>
 
