@@ -76,7 +76,7 @@ export default function CommentHistory({ visible, onClose }: CommentHistoryProps
       <View style={styles.historyContent}>
         <Text style={styles.historyUrl} numberOfLines={1}>{item.source}</Text>
         <Text style={styles.historyDate}>
-          {new Date(item.createdAt).toLocaleDateString()}
+          {new Date(item.createdAt).toLocaleString()}
         </Text>
         <View style={styles.historyStatus}>
           <Text style={[styles.statusText, { color: item.status === 'stop' ? '#ff4444' : '#4CAF50' }]}>
@@ -93,7 +93,10 @@ export default function CommentHistory({ visible, onClose }: CommentHistoryProps
           {downloadingId === item._id ? (
             <ActivityIndicator size="small" color="#4c669f" />
           ) : (
-            <MaterialIcons name="open-in-browser" size={24} color="#4c669f" />
+            <> 
+            <MaterialIcons name="file-download" size={24} color="#4c669f" />
+            <Text>xlsx</Text>
+            </>
           )}
         </Pressable>
       )}

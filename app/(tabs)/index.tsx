@@ -9,6 +9,7 @@ import Header from '../../components/Header';
 interface Metadata {
   viewCount?: number;
   shareCount?: number;
+  likeCount?: number;
 }
 
 interface UrlItem {
@@ -199,6 +200,10 @@ const FullScreenWebView: React.FC = () => {
                           <Text style={styles.statText}> {item.metadata.viewCount || 0}</Text>
                         </View>
                         <View style={styles.statItem}>
+                          <MaterialIcons name="favorite" size={14} color="#FF69B4" />
+                          <Text style={styles.statText}> {item.metadata.likeCount || 0}</Text>
+                        </View>
+                        <View style={styles.statItem}>
                           <MaterialIcons name="share" size={14} color="#666" />
                           <Text style={styles.statText}> {item.metadata.shareCount || 0}</Text>
                         </View>
@@ -301,6 +306,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     minWidth: 100,
+    marginBottom: 30
   },
   buttonText: {
     color: '#fff',

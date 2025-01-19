@@ -59,7 +59,7 @@ const CommentsScreen = () => {
         <View style={styles.headerContainer}>
           <Text style={styles.authorName}>{item.author.name}</Text>
           <Text style={styles.timestamp}>
-            {new Date(Number(item.timestamp) * 1000).toLocaleTimeString([], {
+            {new Date(Number(item.timestamp)).toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
             })}
