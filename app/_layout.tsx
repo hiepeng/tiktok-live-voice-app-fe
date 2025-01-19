@@ -29,6 +29,7 @@ export default function RootLayout() {
 
   // Kiểm tra route protection mà không validate token
   useEffect(() => {
+    console.log(segments, "segments");
     const inAuthGroup = segments[0] === 'auth';
     if (!token && !inAuthGroup) {
       router.replace('/auth/login');

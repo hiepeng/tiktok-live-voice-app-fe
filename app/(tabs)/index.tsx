@@ -79,11 +79,16 @@ const FullScreenWebView: React.FC = () => {
           prevUrls.map(item => (item.taskId === content.taskId ? { ...item, status: "running" } : item)),
         );
 
-        if (message.data.name === "comment") {
+        if (message.name === "comment") {
           message.data.forEach((comment: Comment) => {
             useCommentStore.getState().addComment(comment);
           });
-        } else if (message.data.name === "metadata") {
+        } else if (message.name === "metadata") {
+          console.log(1)
+        } else if (message.name === "join") {
+          console.log(2)
+        } else {
+          console.log(message.name)
         }
       }
     });

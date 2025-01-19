@@ -3,18 +3,17 @@ import { View, Text, StyleSheet, Pressable, Image, SafeAreaView } from 'react-na
 import { useRouter } from 'expo-router';
 import { useUserStore } from '../../store/useUserStore';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useState } from 'react';
+import CommentHistory from '@/components/profile/CommentHistory';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { _id, email, avatar, signOut } = useUserStore();
+  const [showHistory, setShowHistory] = useState(false);
 
   const handleLogout = async () => {
-    try {
-      await signOut();
-      router.replace('/auth/login');
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
+    await signOut();
+    router.replace('/auth/login');
   };
 
   return (
@@ -22,20 +21,11 @@ export default function ProfileScreen() {
       <View style={styles.container}>
         {/* Profile Header */}
         <View style={styles.header}>
-          <View style={styles.avatarContainer}>
-            <Image
-              source={{
-                uri:
-                  avatar ||
-                  'https://static-00.iconduck.com/assets.00/avatar-default-symbolic-icon-2048x1949-pq9uiebg.png',
-              }}
-              style={styles.avatar}
-            />
-            <View style={styles.userInfo}>
-              <Text style={styles.userId}>ID: {_id}</Text>
-              <Text style={styles.email}>{email}</Text>
-            </View>
-          </View>
+          <Image
+            source={{ uri: avatar || 'https://via.placeholder.com/150' }}
+            style={styles.avatar}
+          />
+          <Text style={styles.email}>{email}</Text>
         </View>
 
         {/* Profile Actions */}
@@ -45,14 +35,17 @@ export default function ProfileScreen() {
             <Text style={styles.actionText}>Edit Profile</Text>
           </Pressable>
 
-          <Pressable style={styles.actionButton}>
-            <MaterialIcons name="settings" size={24} color="#555" />
-            <Text style={styles.actionText}>Settings</Text>
+          <Pressable 
+            style={styles.actionButton}
+            onPress={() => setShowHistory(true)}
+          >
+            <MaterialIcons name="history" size={24} color="#555" />
+            <Text style={styles.actionText}>Comment History</Text>
           </Pressable>
 
           <Pressable style={styles.actionButton}>
-            <MaterialIcons name="help" size={24} color="#555" />
-            <Text style={styles.actionText}>Help & Support</Text>
+            <MaterialIcons name="settings" size={24} color="#555" />
+            <Text style={styles.actionText}>Settings</Text>
           </Pressable>
         </View>
 
@@ -61,6 +54,12 @@ export default function ProfileScreen() {
           <MaterialIcons name="logout" size={24} color="white" />
           <Text style={styles.logoutText}>Đăng xuất</Text>
         </Pressable>
+
+        {/* Comment History Modal */}
+        <CommentHistory 
+          visible={showHistory}
+          onClose={() => setShowHistory(false)}
+        />
       </View>
     </SafeAreaView>
   );
@@ -82,23 +81,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
-  avatarContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
     marginRight: 20,
-  },
-  userInfo: {
-    flex: 1,
-  },
-  userId: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
   },
   email: {
     fontSize: 18,

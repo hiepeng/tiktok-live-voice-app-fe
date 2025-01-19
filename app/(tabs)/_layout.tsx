@@ -1,6 +1,6 @@
 import { Stack, Tabs, useRouter } from "expo-router";
 import React from "react";
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 
 import { TabBarIcon } from "@/components/navigation/TabBarIcon";
 import { Colors } from "@/constants/Colors";
@@ -21,19 +21,39 @@ export default function TabLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon
+            <Ionicons
               name={focused ? "home" : "home-outline"}
+              size={24}
               color={color}
             />
           ),
         }}
       />
+      
+      <Tabs.Screen
+        name="comments"
+        options={{
+          title: 'Comments',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons 
+              name={focused ? "chatbubbles" : "chatbubbles-outline"}
+              size={24}
+              color={color}
+            />
+          ),
+        }}
+      />
+
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color }) => (
-            <MaterialIcons name="person" size={24} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? "person" : "person-outline"} 
+              size={24}
+              color={color}
+            />
           ),
         }}
       />
