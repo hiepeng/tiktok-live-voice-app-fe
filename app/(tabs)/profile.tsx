@@ -23,11 +23,13 @@ export default function ProfileScreen() {
       <View style={styles.container}>
         {/* Profile Header */}
         <View style={styles.header}>
-          <Image
-            source={{ uri: avatar || 'https://via.placeholder.com/150' }}
-            style={styles.avatar}
-          />
-          <Text style={styles.email}>{email}</Text>
+          <View style={styles.headerContent}>
+            <Image
+              source={{ uri: avatar || 'https://via.placeholder.com/150' }}
+              style={styles.avatar}
+            />
+            <Text style={styles.email}>{email}</Text>
+          </View>
         </View>
 
         {/* Profile Actions */}
@@ -82,6 +84,10 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   avatar: {
     width: 80,

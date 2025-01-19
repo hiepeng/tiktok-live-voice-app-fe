@@ -3,12 +3,19 @@ import { StyleSheet, View, SafeAreaView, Text, TextInput, TouchableOpacity, Aler
 import { api } from "@/services/api";
 import { useSocket } from "../../hooks/useSocket";
 import { useCommentStore } from "@/store/useCommentStore";
+import { MaterialIcons } from "@expo/vector-icons";
+
+interface Metadata {
+  viewCount?: number;
+  shareCount?: number;
+}
 
 interface UrlItem {
   taskId: string;
   url: string;
   status: "idle" | "pending" | "decoding" | "running" | "stop" | "stopping";
   createdAt: Date;
+  metadata?: Metadata;
 }
 
 interface StartResponse {
@@ -75,6 +82,7 @@ const FullScreenWebView: React.FC = () => {
     socket.on("message-task", message => {
       if (message.act === "update") {
         const content = message.info;
+    
         setUrls(prevUrls =>
           prevUrls.map(item => (item.taskId === content.taskId ? { ...item, status: "running" } : item)),
         );
@@ -84,7 +92,15 @@ const FullScreenWebView: React.FC = () => {
             useCommentStore.getState().addComment(comment);
           });
         } else if (message.name === "metadata") {
+          setUrls(prevUrls =>
+            prevUrls.map(item => 
+              item.taskId === content.taskId 
+                ? { ...item, metadata: message.data }
+                : item
+            )
+          );
           console.log(1)
+          console.log(message)
         } else if (message.name === "join") {
           console.log(2)
         } else {
@@ -172,26 +188,20 @@ const FullScreenWebView: React.FC = () => {
                   </Text>
                   <View style={styles.metaContainer}>
                     <Text style={styles.timeText}>{new Date(item.createdAt).toLocaleString()}</Text>
-                    <Text
-                      style={[
-                        styles.statusText,
-                        {
-                          color:
-                            item.status === "running"
-                              ? "#4CAF50"
-                              : item.status === "decoding"
-                                ? "#FFA500"
-                                : item.status === "stopping"
-                                  ? "#FFA500"
-                                  : item.status === "stop"
-                                    ? "#FF4444"
-                                    : "#999",
-                        },
-                      ]}
-                    >
-                      {item.status}
-                    </Text>
                   </View>
+                  <View style={styles.statsContainer}>
+                      {item.metadata && (
+                        <>
+                          <Text style={styles.statText}>
+                            <MaterialIcons name="visibility" size={14} color="#666" /> {item.metadata.viewCount || 0}
+                          </Text>
+                          <Text style={styles.statText}>
+                            <MaterialIcons name="share" size={14} color="#666" /> {item.metadata.shareCount || 0}
+                          </Text>
+                        </>
+                      )}
+                      <Text style={styles.statusText}>{item.status}</Text>
+                    </View>
                 </View>
 
                 <TouchableOpacity
@@ -308,6 +318,17 @@ const styles = StyleSheet.create({
   timeText: {
     fontSize: 12,
     color: "#666",
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  statText: {
+    fontSize: 12,
+    color: '#666',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });
 
