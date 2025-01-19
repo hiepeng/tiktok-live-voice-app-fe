@@ -59,7 +59,7 @@ export const useUserStore = create<UserState>()(
       },
 
       signUp: async (email: string, password: string) => {
-        await api.post('/auth/register', { email, password });
+        await api.post('/users', { email, password });
       },
 
       signOut: async () => {

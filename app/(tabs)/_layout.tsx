@@ -1,13 +1,18 @@
-import { Stack, Tabs, useRouter } from "expo-router";
+import { Stack, Tabs } from "expo-router";
 import React from "react";
-import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { MaterialIcons } from "@expo/vector-icons";
+import { useUserStore } from "@/store/useUserStore";
+import { View } from "react-native";
 
-import { TabBarIcon } from "@/components/navigation/TabBarIcon";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 
 export default function TabLayout() {
+  const { token } = useUserStore();
   const colorScheme = useColorScheme();
+  if (!token) {
+    return <View />;
+  }
 
   return (
     <Tabs
@@ -20,41 +25,21 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "home" : "home-outline"}
-              size={24}
-              color={color}
-            />
-          ),
+          tabBarIcon: ({ color }) => <MaterialIcons name="home" size={24} color={color} />,
         }}
       />
-      
       <Tabs.Screen
         name="comments"
         options={{
-          title: 'Comments',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons 
-              name={focused ? "chatbubbles" : "chatbubbles-outline"}
-              size={24}
-              color={color}
-            />
-          ),
+          title: "Comments",
+          tabBarIcon: ({ color }) => <MaterialIcons name="chat" size={24} color={color} />,
         }}
       />
-
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "person" : "person-outline"} 
-              size={24}
-              color={color}
-            />
-          ),
+          title: "Profile",
+          tabBarIcon: ({ color }) => <MaterialIcons name="person" size={24} color={color} />,
         }}
       />
     </Tabs>

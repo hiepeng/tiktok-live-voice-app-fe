@@ -1,5 +1,5 @@
-import { BACKEND_URL } from '../constants/config';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BACKEND_URL } from "../constants/config";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface RequestConfig extends RequestInit {
   token?: string;
@@ -13,28 +13,30 @@ class ApiService {
   }
 
   private async request<T>(endpoint: string, config: RequestConfig = {}): Promise<T> {
-    const token = await AsyncStorage.getItem('user-storage');
+    const token = await AsyncStorage.getItem("user-storage");
     const parsedToken = token ? JSON.parse(token).state.token : null;
     const { token: configToken, ...restConfig } = config;
-    
+
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...(config.headers as Record<string, string>),
     };
 
     if (parsedToken) {
-      headers['Authorization'] = `Bearer ${parsedToken}`;
+      headers["Authorization"] = `Bearer ${parsedToken}`;
     }
 
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+    const url = `${this.baseUrl}${endpoint}`;
+    const options = {
       ...restConfig,
       headers,
-    });
-
+    };
+    const response = await fetch(url, options);
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || 'API request failed');
+      console.error(data)
+      throw new Error(data.message || "API request failed");
     }
 
     return data;
@@ -43,14 +45,14 @@ class ApiService {
   public async get<T>(endpoint: string, config?: RequestConfig): Promise<T> {
     return this.request<T>(endpoint, {
       ...config,
-      method: 'GET',
+      method: "GET",
     });
   }
 
   public async post<T>(endpoint: string, body?: any, config?: RequestConfig): Promise<T> {
     return this.request<T>(endpoint, {
       ...config,
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify(body),
     });
   }
@@ -58,7 +60,7 @@ class ApiService {
   public async put<T>(endpoint: string, body?: any, config?: RequestConfig): Promise<T> {
     return this.request<T>(endpoint, {
       ...config,
-      method: 'PUT',
+      method: "PUT",
       body: JSON.stringify(body),
     });
   }
@@ -66,14 +68,14 @@ class ApiService {
   public async delete<T>(endpoint: string, config?: RequestConfig): Promise<T> {
     return this.request<T>(endpoint, {
       ...config,
-      method: 'DELETE',
+      method: "DELETE",
     });
   }
 
   public async patch<T>(endpoint: string, body?: any, config?: RequestConfig): Promise<T> {
     return this.request<T>(endpoint, {
       ...config,
-      method: 'PATCH',
+      method: "PATCH",
       body: JSON.stringify(body),
     });
   }

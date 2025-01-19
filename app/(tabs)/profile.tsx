@@ -11,6 +11,8 @@ export default function ProfileScreen() {
   const { _id, email, avatar, signOut } = useUserStore();
   const [showHistory, setShowHistory] = useState(false);
 
+  console.log(email, avatar, "email, avatar");
+
   const handleLogout = async () => {
     await signOut();
     router.replace('/auth/login');
