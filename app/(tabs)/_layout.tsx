@@ -9,7 +9,6 @@ import { useColorScheme } from "@/hooks/useColorScheme";
 
 export default function TabLayout() {
   const { token } = useUserStore();
-  const colorScheme = useColorScheme();
   if (!token) {
     return <View />;
   }
@@ -17,7 +16,7 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
+        tabBarActiveTintColor: "#0a7ea4",
         headerShown: false,
       }}
     >
