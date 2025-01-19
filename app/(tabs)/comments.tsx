@@ -4,6 +4,8 @@ import { useCommentStore } from "@/store/useCommentStore";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Header from '../../components/Header';
+import * as Speech from 'expo-speech';
+import OptionsModal from '@/components/comments/OptionsModal';
 
 const { width } = Dimensions.get("window");
 
@@ -13,6 +15,8 @@ const CommentsScreen = () => {
   const [isAtEnd, setIsAtEnd] = useState(true);
   const [isLayoutComplete, setIsLayoutComplete] = useState(false);
   const [isAutoScrolling, setIsAutoScrolling] = useState(false);
+  const [isTTSEnabled, setIsTTSEnabled] = useState(false);
+  const [showOptionsModal, setShowOptionsModal] = useState(false);
 
   // Kiểm tra vị trí cuộn
   const handleScroll = event => {
@@ -41,6 +45,25 @@ const CommentsScreen = () => {
       scrollToEnd();
     }
   }, [comments, isAtEnd, isLayoutComplete]);
+
+  useEffect(() => {
+    console.log(11)
+    if (isTTSEnabled && comments.length > 0) {
+      console.log(1)
+      const latestComment = comments[comments.length - 1];
+      Speech.speak(`${latestComment.author.name}: ${latestComment.text}`, {
+        language: 'vi',
+        pitch: 1.0,
+        rate: 0.9,
+      });
+    }
+  }, [comments]);
+
+  useEffect(() => {
+    return () => {
+      Speech.stop();
+    };
+  }, []);
 
   const renderComment = ({ item, index }) => (
     <LinearGradient
@@ -72,15 +95,15 @@ const CommentsScreen = () => {
     </LinearGradient>
   );
 
-  const clearButton = (
-    <TouchableOpacity onPress={clearComments}>
-      <Ionicons name="trash-outline" size={24} color="#000" />
+  const SpeakerButton = (
+    <TouchableOpacity onPress={() => setShowOptionsModal(true)}>
+      <Ionicons name="volume-high-outline" size={24} color="#000" />
     </TouchableOpacity>
   );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <Header title="Comments" rightComponent={clearButton} />
+      <Header title="Comments" rightComponent={SpeakerButton} />
       <View style={styles.listWrapper}>
         <FlatList
           ref={flatListRef}
@@ -118,6 +141,17 @@ const CommentsScreen = () => {
           <Ionicons name="arrow-down" size={24} color="#fff" />
         </TouchableOpacity>
       )}
+
+      <OptionsModal 
+        visible={showOptionsModal}
+        onClose={() => setShowOptionsModal(false)}
+        onClearComments={clearComments}
+        isTTSEnabled={isTTSEnabled}
+        onToggleTTS={() => {
+          setIsTTSEnabled(!isTTSEnabled)
+          console.log(isTTSEnabled, "isTTSEnabled")
+        }}
+      />
     </SafeAreaView>
   );
 };
