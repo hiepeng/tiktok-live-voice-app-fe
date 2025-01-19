@@ -190,33 +190,28 @@ const FullScreenWebView: React.FC = () => {
                     <Text style={styles.timeText}>{new Date(item.createdAt).toLocaleString()}</Text>
                   </View>
                   <View style={styles.statsContainer}>
-                      {item.metadata && (
-                        <>
-                          <Text style={styles.statText}>
-                            <MaterialIcons name="visibility" size={14} color="#666" /> {item.metadata.viewCount || 0}
-                          </Text>
-                          <Text style={styles.statText}>
-                            <MaterialIcons name="share" size={14} color="#666" /> {item.metadata.shareCount || 0}
-                          </Text>
-                        </>
-                      )}
-                      <Text style={styles.statusText}>{item.status}</Text>
-                    </View>
+                    {item.metadata && (
+                      <>
+                        <View style={styles.statItem}>
+                          <MaterialIcons name="visibility" size={14} color="#666" />
+                          <Text style={styles.statText}> {item.metadata.viewCount || 0}</Text>
+                        </View>
+                        <View style={styles.statItem}>
+                          <MaterialIcons name="share" size={14} color="#666" />
+                          <Text style={styles.statText}> {item.metadata.shareCount || 0}</Text>
+                        </View>
+                      </>
+                    )}
+                    <Text style={[styles.statusText, getStatusColor(item.status)]}>
+                      {item.status}
+                    </Text>
+                  </View>
                 </View>
 
                 <TouchableOpacity
                   style={[
                     styles.button,
-                    {
-                      backgroundColor:
-                        item.status === "running"
-                          ? "#FF4444"
-                          : item.status === "stopping"
-                            ? "#FFA500"
-                            : item.status === "decoding"
-                              ? "#FFA500"
-                              : "#999",
-                    },
+                    getButtonColor(item.status),
                     (item.status === "pending" || item.status === "stop" || item.status === "stopping") &&
                       styles.buttonDisabled,
                   ]}
@@ -265,39 +260,53 @@ const styles = StyleSheet.create({
   },
   streamInfo: {
     flex: 1,
-    marginRight: 10,
+    marginRight: 15,
   },
   urlText: {
     fontSize: 14,
-    color: "#333",
-    marginBottom: 4,
+    fontWeight: '500',
+    color: '#2c3e50',
+    marginBottom: 6,
   },
   statusText: {
     fontSize: 12,
-    fontWeight: "500",
+    fontWeight: '600',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    overflow: 'hidden',
   },
   urlContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f5f5f5",
-    padding: 10,
-    borderRadius: 10,
-    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
   button: {
     paddingHorizontal: 20,
-    height: 40,
+    height: 36,
     borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 100,
   },
   buttonText: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   buttonDisabled: {
-    opacity: 0.5,
+    opacity: 0.6,
   },
   input: {
     height: 50,
@@ -310,26 +319,59 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   metaContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 4,
+    marginBottom: 6,
   },
   timeText: {
     fontSize: 12,
-    color: "#666",
+    color: '#7f8c8d',
   },
   statsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
   },
-  statText: {
-    fontSize: 12,
-    color: '#666',
+  statItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#fff',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
+  statText: {
+    fontSize: 13,
+    color: '#666',
+    marginLeft: 4,
+  },
+});
+
+const getStatusColor = (status: string) => ({
+  backgroundColor: 
+    status === 'running' ? '#e3f2fd' :
+    status === 'stopping' ? '#fff3e0' :
+    status === 'decoding' ? '#e8f5e9' :
+    '#f5f5f5',
+  color:
+    status === 'running' ? '#1976d2' :
+    status === 'stopping' ? '#f57c00' :
+    status === 'decoding' ? '#388e3c' :
+    '#9e9e9e',
+});
+
+const getButtonColor = (status: string) => ({
+  backgroundColor:
+    status === 'running' ? '#ef5350' :
+    status === 'stopping' ? '#ff9800' :
+    status === 'decoding' ? '#4caf50' :
+    '#9e9e9e',
 });
 
 export default FullScreenWebView;
