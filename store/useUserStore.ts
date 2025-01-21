@@ -9,6 +9,12 @@ interface UserState {
   _id: string | null;
   email: string | null;
   avatar: string | null;
+  subscription?: {
+    packageId: string;
+    startDate: string;
+    endDate: string;
+    status: 'active' | 'expired' | 'cancelled';
+  };
   validateToken: () => Promise<boolean>;
   signIn: (email: string, password: string) => Promise<string>;
   signUp: (email: string, password: string) => Promise<void>;
@@ -38,7 +44,8 @@ export const useUserStore = create<UserState>()(
           set({ 
             _id: res.data._id,
             email: res.data.email,
-            avatar: res.data.avatar
+            avatar: res.data.avatar,
+            subscription: res.data.subscription
           });
           return true;
         } catch (error) {
@@ -46,7 +53,8 @@ export const useUserStore = create<UserState>()(
             token: null,
             _id: null,
             email: null,
-            avatar: null
+            avatar: null,
+            subscription: undefined
           });
           return false;
         }
@@ -67,7 +75,8 @@ export const useUserStore = create<UserState>()(
           token: null,
           _id: null,
           email: null,
-          avatar: null
+          avatar: null,
+          subscription: undefined
         });
       },
     }),

@@ -3,9 +3,11 @@ import { StyleSheet, View, SafeAreaView, Text, FlatList, Image, Dimensions, Touc
 import { useCommentStore } from "@/store/useCommentStore";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import Header from '../../components/Header';
-import * as Speech from 'expo-speech';
-import OptionsModal from '@/components/comments/OptionsModal';
+import Header from "../../components/Header";
+import * as Speech from "expo-speech";
+import OptionsModal from "@/components/comments/OptionsModal";
+import { MAX_COMMENTS } from "@/constants/config";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get("window");
 
@@ -17,6 +19,7 @@ const CommentsScreen = () => {
   const [isAutoScrolling, setIsAutoScrolling] = useState(false);
   const [isTTSEnabled, setIsTTSEnabled] = useState(false);
   const [showOptionsModal, setShowOptionsModal] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState('vi-VN');
 
   // Kiểm tra vị trí cuộn
   const handleScroll = event => {
@@ -46,53 +49,83 @@ const CommentsScreen = () => {
     }
   }, [comments, isAtEnd, isLayoutComplete]);
 
+  // Load saved language preference
   useEffect(() => {
-    console.log(11)
+    AsyncStorage.getItem('tts-language').then(lang => {
+      if (lang) setSelectedLanguage(lang);
+    });
+  }, []);
+
+  // Xử lý TTS khi có comment mới
+  useEffect(() => {
     if (isTTSEnabled && comments.length > 0) {
-      console.log(1)
       const latestComment = comments[comments.length - 1];
       Speech.speak(`${latestComment.author.name}: ${latestComment.text}`, {
-        language: 'vi',
+        language: selectedLanguage,
         pitch: 1.0,
-        rate: 0.9,
+        rate: 1.0,
       });
     }
-  }, [comments]);
+  }, [comments, isTTSEnabled, selectedLanguage]);
 
+  // Dừng TTS khi unmount component
   useEffect(() => {
     return () => {
       Speech.stop();
     };
   }, []);
 
+  const handleLanguageChange = (language: string) => {
+    setSelectedLanguage(language);
+    AsyncStorage.setItem('tts-language', language);
+    // Dừng TTS hiện tại khi thay đổi ngôn ngữ
+    Speech.stop();
+  };
+
+  const handleCommentPress = (comment: any) => {
+    // Dừng TTS hiện tại trước khi đọc comment mới
+    Speech.stop();
+    
+    Speech.speak(`${comment.author.name}: ${comment.text}`, {
+      language: selectedLanguage,
+      pitch: 1.0,
+      rate: 1.0,
+    });
+  };
+
   const renderComment = ({ item, index }) => (
-    <LinearGradient
-      colors={index % 2 === 0 ? ["#f6f9fc", "#ffffff"] : ["#ffffff", "#f6f9fc"]}
-      style={styles.commentContainer}
+    <TouchableOpacity 
+      onPress={() => handleCommentPress(item)}
+      activeOpacity={0.7}  // Luôn hiển thị hiệu ứng nhấn
     >
-      <View style={styles.avatarContainer}>
-        <Image
-          source={{ uri: item.author.avatar }}
-          style={styles.avatar}
-          defaultSource={require("../../assets/images/default-avatar.jpg")}
-        />
-        <View style={styles.onlineIndicator} />
-      </View>
-      <View style={styles.contentContainer}>
-        <View style={styles.headerContainer}>
-          <Text style={styles.authorName}>{item.author.name}</Text>
-          <Text style={styles.timestamp}>
-            {new Date(Number(item.timestamp)).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </Text>
+      <LinearGradient
+        colors={index % 2 === 0 ? ["#f6f9fc", "#ffffff"] : ["#ffffff", "#f6f9fc"]}
+        style={styles.commentContainer}
+      >
+        <View style={styles.avatarContainer}>
+          <Image
+            source={{ uri: item.author.avatar }}
+            style={styles.avatar}
+            defaultSource={require("../../assets/images/default-avatar.jpg")}
+          />
+          <View style={styles.onlineIndicator} />
         </View>
-        <View style={styles.messageContainer}>
-          <Text style={styles.commentText}>{item.text}</Text>
+        <View style={styles.contentContainer}>
+          <View style={styles.headerContainer}>
+            <Text style={styles.authorName}>{item.author.name}</Text>
+            <Text style={styles.timestamp}>
+              {new Date(Number(item.timestamp)).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </Text>
+          </View>
+          <View style={styles.messageContainer}>
+            <Text style={styles.commentText}>{item.text}</Text>
+          </View>
         </View>
-      </View>
-    </LinearGradient>
+      </LinearGradient>
+    </TouchableOpacity>
   );
 
   const SpeakerButton = (
@@ -102,8 +135,11 @@ const CommentsScreen = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <Header title="Comments" rightComponent={SpeakerButton} />
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <Header
+        title={`Comments (${comments.length > MAX_COMMENTS-1 ? MAX_COMMENTS + "+" : comments.length})`}
+        rightComponent={SpeakerButton}
+      />
       <View style={styles.listWrapper}>
         <FlatList
           ref={flatListRef}
@@ -127,30 +163,32 @@ const CommentsScreen = () => {
           }}
         />
         <LinearGradient
-          colors={['rgba(255,255,255,1)', 'rgba(255,255,255,0)']}
+          colors={["rgba(255,255,255,1)", "rgba(255,255,255,0)"]}
           style={styles.fadeGradient}
           pointerEvents="none"
         />
       </View>
 
       {!isAtEnd && !isAutoScrolling && comments.length > 0 && (
-        <TouchableOpacity 
-          style={styles.scrollToBottomButton}
-          onPress={scrollToEnd}
-        >
+        <TouchableOpacity style={styles.scrollToBottomButton} onPress={scrollToEnd}>
           <Ionicons name="arrow-down" size={24} color="#fff" />
         </TouchableOpacity>
       )}
 
-      <OptionsModal 
+      <OptionsModal
         visible={showOptionsModal}
         onClose={() => setShowOptionsModal(false)}
         onClearComments={clearComments}
         isTTSEnabled={isTTSEnabled}
         onToggleTTS={() => {
-          setIsTTSEnabled(!isTTSEnabled)
-          console.log(isTTSEnabled, "isTTSEnabled")
+          setIsTTSEnabled(!isTTSEnabled);
+          // Dừng TTS khi tắt chức năng
+          if (isTTSEnabled) {
+            Speech.stop();
+          }
         }}
+        selectedLanguage={selectedLanguage}
+        onLanguageChange={handleLanguageChange}
       />
     </SafeAreaView>
   );
@@ -237,15 +275,15 @@ const styles = StyleSheet.create({
     height: 8,
   },
   scrollToBottomButton: {
-    position: 'absolute',
+    position: "absolute",
     right: 20,
     bottom: 20,
-    backgroundColor: '#3b5998',
+    backgroundColor: "#3b5998",
     width: 44,
     height: 44,
     borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -257,10 +295,10 @@ const styles = StyleSheet.create({
   },
   listWrapper: {
     flex: 1,
-    position: 'relative',
+    position: "relative",
   },
   fadeGradient: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
