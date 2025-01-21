@@ -1,67 +1,72 @@
+export enum SubscriptionType {
+  FREE = 'free',
+  BASIC = 'basic',
+  STANDARD = 'standard',
+  PREMIUM = 'premium',
+  CUSTOM = 'custom'
+}
+
 export interface Package {
   id: string;
+  type: SubscriptionType;
   name: string;
-  price: number | null; // null for custom/contact admin packages
-  duration: string;
+  price: number;
   features: string[];
-  maxStreams: number;
-  maxDuration: number; // in minutes, 0 means unlimited
-  recommended?: boolean;
-  isCustom?: boolean; // flag for custom packages requiring admin contact
+  maxDuration: number;
+  maxConcurrentStreams: number;
 }
 
 export const PACKAGES: Package[] = [
   {
-    id: "1",
-    name: "Free",
+    id: '1',
+    type: SubscriptionType.FREE,
+    name: 'Free',
     price: 0,
-    duration: "1 month",
-    features: ["Monitor 1 live stream (max 30 minutes)", "Text-to-Speech for comments", "Export to Excel"],
-    maxStreams: 1,
-    maxDuration: 30,
-  },
-  {
-    id: "2",
-    name: "Basic",
-    price: 3.99,
-    duration: "1 month",
-    features: ["Monitor 1 live stream no time limit", "Text-to-Speech for comments", "Export to Excel"],
-    maxStreams: 1,
-    maxDuration: 0,
-  },
-  {
-    id: "3",
-    name: "Standard",
-    price: 7.99,
-    duration: "1 month",
-    features: ["Monitor 2 live stream no time limit", "Text-to-Speech for comments", "Export to Excel"],
-    maxStreams: 2,
-    maxDuration: 0,
-    recommended: true,
-  },
-  {
-    id: "4",
-    name: "Premium",
-    price: 19.99,
-    duration: "1 month",
-    features: ["Monitor up to 5 live streams simultaneously", "Text-to-Speech for comments", "Export to Excel"],
-    maxStreams: 5,
-    maxDuration: 0,
-  },
-  {
-    id: "5",
-    name: "Custom",
-    price: null,
-    duration: "Flexible",
+    maxDuration: 5,
+    maxConcurrentStreams: 1,
     features: [
-      "Custom number of streams",
-      "All Premium features",
-      "Priority support",
-      "Custom features on request",
-      "Contact admin for pricing"
-    ],
-    maxStreams: 999, // Placeholder value, actual limit set by admin
-    maxDuration: 0,
-    isCustom: true
+      '5 minutes per stream',
+      '1 concurrent stream',
+      'Basic features'
+    ]
   },
+  {
+    id: '2',
+    type: SubscriptionType.BASIC,
+    name: 'Basic',
+    price: 9.99,
+    maxDuration: 30,
+    maxConcurrentStreams: 2,
+    features: [
+      '30 minutes per stream',
+      '2 concurrent streams',
+      'Advanced features'
+    ]
+  },
+  {
+    id: '3',
+    type: SubscriptionType.STANDARD,
+    name: 'Standard',
+    price: 19.99,
+    maxDuration: 60,
+    maxConcurrentStreams: 3,
+    features: [
+      '60 minutes per stream',
+      '3 concurrent streams',
+      'Premium features'
+    ]
+  },
+  {
+    id: '4',
+    type: SubscriptionType.PREMIUM,
+    name: 'Premium',
+    price: 29.99,
+    maxDuration: -1,
+    maxConcurrentStreams: 5,
+    features: [
+      'Unlimited stream duration',
+      '5 concurrent streams',
+      'All features included'
+    ]
+  }
 ];

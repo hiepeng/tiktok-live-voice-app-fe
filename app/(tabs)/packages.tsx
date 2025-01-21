@@ -1,82 +1,158 @@
-import React from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView } from "react-native";
+import React, { useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  SafeAreaView,
+  ActivityIndicator,
+  Alert,
+  Linking,
+} from "react-native";
 import Header from "@/components/Header";
 import { MaterialIcons } from "@expo/vector-icons";
-import { Package, PACKAGES } from "@/interfaces/package.interface";
-import { useUserStore } from '../../store/useUserStore';
+import { SubscriptionType } from "@/interfaces/package.interface";
+import { useSubscriptionStore } from "@/store/useSubscriptionStore";
 
 export default function PackagesScreen() {
-  const { subscription } = useUserStore();
-  const currentPackage = subscription ? PACKAGES.find(p => p.id === subscription.packageId) : null;
+  const {
+    currentSubscription,
+    packages,
+    isLoading,
+    error,
+    fetchCurrentSubscription,
+    purchaseSubscription,
+    fetchPackages,
+  } = useSubscriptionStore();
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
+  useEffect(() => {
+    fetchCurrentSubscription();
+    fetchPackages();
+  }, []);
+
+  const handlePurchase = (pkg: Package) => {
+    if (pkg.type === SubscriptionType.FREE) {
+      Alert.alert("Info", "Free plan is automatically activated when paid plans expire");
+      return;
+    }
+
+    Alert.alert("Select Duration", "Choose your subscription period:", [
+      {
+        text: "1 Month",
+        onPress: () => confirmPurchase(pkg, 1, pkg.price),
+      },
+      {
+        text: "6 Months (10% off)",
+        onPress: () => confirmPurchase(pkg, 6, pkg.price * 6 * 0.9),
+      },
+      {
+        text: "12 Months (20% off)",
+        onPress: () => confirmPurchase(pkg, 12, pkg.price * 12 * 0.8),
+      },
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+    ]);
+  };
+
+  const confirmPurchase = async (pkg: Package, duration: 1 | 6 | 12, totalPrice: number) => {
+    Alert.alert(
+      "Confirm Purchase",
+      `Subscribe to ${pkg.name} for ${duration} ${duration === 1 ? "month" : "months"}?\n\nTotal: $${totalPrice.toFixed(2)}`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Confirm",
+          onPress: async () => {
+            try {
+              await purchaseSubscription(pkg.type, duration);
+              Alert.alert("Success", "Subscription updated successfully!");
+            } catch (error) {
+              Alert.alert("Error", "Failed to purchase subscription");
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handlePackageAction = (pkg: Package) => {
+    if (pkg.type === SubscriptionType.CUSTOM) {
+      Linking.openURL("https://tiktok-live-voice.com/enterprise");
+      return;
+    }
+    handlePurchase(pkg);
   };
 
   const renderCurrentSubscription = () => {
-    if (!subscription || !currentPackage) return null;
+    if (isLoading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0a7ea4" />
+        </View>
+      );
+    }
+
+    if (error) {
+      return (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      );
+    }
+
+    if (!currentSubscription) return null;
 
     return (
       <View style={styles.currentPackageContainer}>
         <View style={styles.currentPackageHeader}>
           <Text style={styles.currentPackageTitle}>Current Subscription</Text>
-          <View style={[
-            styles.statusBadge, 
-            { backgroundColor: subscription.status === 'active' ? '#4CAF50' : '#FF9800' }
-          ]}>
-            <Text style={styles.statusText}>
-              {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
-            </Text>
+          <View style={[styles.statusBadge, { backgroundColor: currentSubscription.isActive ? "#4CAF50" : "#FF9800" }]}>
+            <Text style={styles.statusText}>{currentSubscription.isActive ? "Active" : "Expired"}</Text>
           </View>
         </View>
-        
+
         <View style={styles.currentPackageContent}>
-          <Text style={styles.packageName}>{currentPackage.name} Package</Text>
-          <Text style={styles.expiryDate}>
-            Expires: {formatDate(subscription.endDate)}
-          </Text>
+          <Text style={styles.packageName}>{currentSubscription.type}</Text>
+          {currentSubscription.expiryDate && (
+            <Text style={styles.expiryDate}>
+              Expires: {new Date(currentSubscription.expiryDate).toLocaleDateString()}
+            </Text>
+          )}
         </View>
       </View>
     );
   };
 
-  const renderPackagePrice = (item: Package) => {
-    if (item.isCustom) {
-      return (
-        <Text style={styles.packagePrice}>
-          Contact Admin
-        </Text>
-      );
+  const renderPackagePrice = (pkg: Package) => {
+    if (pkg.type === SubscriptionType.CUSTOM) {
+      return <Text style={styles.packagePrice}>Contact Us</Text>;
     }
-    
     return (
       <Text style={styles.packagePrice}>
-        {item.price === 0 ? 'Free' : 
-          new Intl.NumberFormat("en-US", { 
-            style: "currency", 
-            currency: "USD" 
-          }).format(item.price || 0)}
-        <Text style={styles.duration}>/{item.duration}</Text>
+        {pkg.price === 0
+          ? "Free"
+          : new Intl.NumberFormat("en-US", {
+              style: "currency",
+              currency: "USD",
+            }).format(pkg.price)}
+        <Text style={styles.duration}>/month</Text>
       </Text>
     );
   };
 
-  const renderPackage = ({ item }: { item: Package }) => (
-    <View style={[styles.packageCard, item.recommended && styles.recommendedCard]}>
-      {item.recommended && (
-        <View style={styles.recommendedBadge}>
-          <Text style={styles.recommendedText}>Recommended</Text>
-        </View>
-      )}
-      <Text style={styles.packageName}>{item.name}</Text>
-      {renderPackagePrice(item)}
+  const renderPackage = ({ item: pkg }: { item: Package }) => (
+    <View style={styles.packageCard}>
+      <Text style={styles.packageName}>{pkg.name}</Text>
+      {renderPackagePrice(pkg)}
 
       <View style={styles.featuresContainer}>
-        {item.features.map((feature, index) => (
+        {pkg.features.map((feature, index) => (
           <View key={index} style={styles.featureItem}>
             <MaterialIcons name="check-circle" size={20} color="#4CAF50" />
             <Text style={styles.featureText}>{feature}</Text>
@@ -84,28 +160,61 @@ export default function PackagesScreen() {
         ))}
       </View>
 
-      <TouchableOpacity style={[styles.buyButton, item.recommended && styles.recommendedButton]}>
-        <Text style={styles.buyButtonText}>Choose Plan</Text>
+      <TouchableOpacity
+        style={[
+          styles.buyButton,
+          pkg.type === SubscriptionType.CUSTOM && styles.customButton,
+          currentSubscription?.type === pkg.type && styles.currentPlanButton,
+        ]}
+        onPress={() => handlePackageAction(pkg)}
+        disabled={currentSubscription?.type === pkg.type}
+      >
+        <Text
+          style={[
+            styles.buyButtonText,
+            pkg.type === SubscriptionType.CUSTOM && styles.customButtonText,
+            currentSubscription?.type === pkg.type && { color: "#fff" },
+          ]}
+        >
+          {pkg.type === SubscriptionType.CUSTOM
+            ? "Contact Us"
+            : currentSubscription?.type === pkg.type
+              ? "Current Plan"
+              : "Choose Plan"}
+        </Text>
       </TouchableOpacity>
     </View>
   );
 
-  const ListHeaderComponent = () => (
-    <>
-      <Header title="Packages" />
-      {renderCurrentSubscription()}
-    </>
-  );
-
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
+      <Header title="Packages" />
       <FlatList
-        data={PACKAGES}
+        data={[
+          ...packages,
+          {
+            _id: "custom",
+            name: "Enterprise",
+            type: SubscriptionType.CUSTOM,
+            price: 0,
+            maxDuration: -1,
+            maxConcurrentStreams: -1,
+            features: [
+              "unlimited most advanced functions, and additional special functions upon request",
+              "Dedicated support team",
+            ],
+            isActive: true,
+          },
+        ]}
         renderItem={renderPackage}
-        keyExtractor={item => item.id}
+        keyExtractor={item => item._id}
         contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-        ListHeaderComponent={ListHeaderComponent}
+        ListHeaderComponent={renderCurrentSubscription}
+        refreshing={isLoading}
+        onRefresh={() => {
+          fetchCurrentSubscription();
+          fetchPackages();
+        }}
       />
     </SafeAreaView>
   );
@@ -117,7 +226,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5",
   },
   listContainer: {
-    padding: 16,
+    paddingHorizontal: 16,
     paddingBottom: 32,
   },
   packageCard: {
@@ -133,24 +242,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-  },
-  recommendedCard: {
-    borderColor: "#0a7ea4",
-    borderWidth: 2,
-  },
-  recommendedBadge: {
-    position: "absolute",
-    top: -12,
-    right: 20,
-    backgroundColor: "#0a7ea4",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  recommendedText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "bold",
   },
   packageName: {
     fontSize: 24,
@@ -188,35 +279,32 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
   },
-  recommendedButton: {
-    backgroundColor: "#0a7ea4",
-  },
   buyButtonText: {
     fontSize: 16,
     fontWeight: "bold",
     color: "#333",
   },
   currentPackageContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     margin: 16,
     padding: 16,
     borderRadius: 12,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
   currentPackageHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
   },
   currentPackageTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#1a1a1a',
+    fontWeight: "600",
+    color: "#1a1a1a",
   },
   statusBadge: {
     paddingHorizontal: 8,
@@ -224,15 +312,38 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   statusText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   currentPackageContent: {
     gap: 8,
   },
   expiryDate: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: "center",
+  },
+  errorContainer: {
+    padding: 20,
+    backgroundColor: "#ffebee",
+    borderRadius: 8,
+    marginHorizontal: 16,
+  },
+  errorText: {
+    color: "#c62828",
+    textAlign: "center",
+  },
+  currentPlanButton: {
+    backgroundColor: "#4CAF50",
+  },
+  customButton: {
+    backgroundColor: "#2c3e50",
+  },
+  customButtonText: {
+    color: "#fff",
   },
 });
