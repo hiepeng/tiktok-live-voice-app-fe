@@ -12,8 +12,9 @@ import {
 } from "react-native";
 import Header from "@/components/Header";
 import { MaterialIcons } from "@expo/vector-icons";
-import { SubscriptionType } from "@/interfaces/package.interface";
+import { Package, SubscriptionType } from "@/interfaces/package.interface";
 import { useSubscriptionStore } from "@/store/useSubscriptionStore";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function PackagesScreen() {
   const {
@@ -71,9 +72,35 @@ export default function PackagesScreen() {
           onPress: async () => {
             try {
               await purchaseSubscription(pkg.type, duration);
-              Alert.alert("Success", "Subscription updated successfully!");
+              
+              Alert.alert(
+                "Success",
+                "Subscription updated successfully!",
+                [
+                  {
+                    text: "OK",
+                    onPress: () => {
+                      fetchCurrentSubscription();
+                    }
+                  }
+                ]
+              );
+
             } catch (error) {
-              Alert.alert("Error", "Failed to purchase subscription");
+              let errorMessage = 'Failed to purchase subscription';
+              
+              if (error instanceof Error) {
+                if (error.message.includes('insufficient_funds')) {
+                  errorMessage = 'Insufficient funds';
+                } else if (error.message.includes('invalid_package')) {
+                  errorMessage = 'Invalid package selected';
+                } else if (error.message.includes('already_subscribed')) {
+                  errorMessage = 'You already have an active subscription';
+                }
+              }
+
+              Alert.alert('Error', errorMessage);
+              console.error('Purchase error:', error);
             }
           },
         },
@@ -152,6 +179,18 @@ export default function PackagesScreen() {
       {renderPackagePrice(pkg)}
 
       <View style={styles.featuresContainer}>
+        {pkg.type !== SubscriptionType.CUSTOM && (
+          <>
+            <View style={styles.featureItem}>
+              <MaterialIcons name="check-circle" size={20} color="#4CAF50" />
+              <Text style={styles.featureText}>{pkg.maxDuration + " minutes per stream"}</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <MaterialIcons name="check-circle" size={20} color="#4CAF50" />
+              <Text style={styles.featureText}>{pkg.maxConcurrentStreams + " concurrent stream"}</Text>
+            </View>
+          </>
+        )}
         {pkg.features.map((feature, index) => (
           <View key={index} style={styles.featureItem}>
             <MaterialIcons name="check-circle" size={20} color="#4CAF50" />
