@@ -55,6 +55,7 @@ const styles = StyleSheet.create({
     right: 16,
   },
   logo: {
+    borderRadius: 6,
     width: 32,
     height: 32,
     position: 'absolute',

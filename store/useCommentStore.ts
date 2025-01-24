@@ -1,3 +1,4 @@
+import { MAX_COMMENTS } from '@/constants/config';
 import { create } from 'zustand';
 
 interface Comment {
@@ -27,7 +28,15 @@ export const useCommentStore = create<CommentState>((set) => ({
   error: null,
 
   addComment: (comment) =>
-    set((state) => ({ comments: [...state.comments, comment] })),
+    set((state) => {
+      const newComments = [...state.comments, comment];
+      // Nếu số lượng comments vượt quá MAX_COMMENTS, xóa những comments cũ nhất
+      if (newComments.length > MAX_COMMENTS) {
+        return { comments: newComments.slice(-MAX_COMMENTS) };
+      }
+      return { comments: newComments };
+    }),
+    
   setLoading: (loading) => set({ isLoading: loading }),
   setError: (error) => set({ error }),
   clearComments: () => set({ comments: [] }),
