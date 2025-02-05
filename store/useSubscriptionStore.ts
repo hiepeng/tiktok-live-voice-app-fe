@@ -1,34 +1,17 @@
 import { create } from 'zustand';
 import { api } from '../services/api';
-import { SubscriptionType, Package, PACKAGES } from '../interfaces/package.interface';
+import { SubscriptionType } from '../interfaces/package.interface';
 
-interface Package {
-  _id: string;
-  name: string;
-  type: SubscriptionType;
-  price: number;
-  maxDuration: number;
-  maxConcurrentStreams: number;
-  features: string[];
-  isActive: boolean;
-}
 
-interface Subscription {
-  type: SubscriptionType;
-  maxDuration: number;
-  maxConcurrentStreams: number;
-  expiryDate: string | null;
-  isActive: boolean;
-}
 
 interface SubscriptionState {
   currentSubscription: Subscription | null;
   isLoading: boolean;
   error: string | null;
+  packages: Package[];
+  
   fetchCurrentSubscription: () => Promise<void>;
   purchaseSubscription: (type: SubscriptionType, durationMonths: 1 | 6 | 12) => Promise<void>;
-  getPackages: () => Package[];
-  packages: Package[];
   fetchPackages: () => Promise<void>;
 }
 
@@ -62,8 +45,6 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       set({ isLoading: false });
     }
   },
-
-  getPackages: () => PACKAGES,
 
   fetchPackages: async () => {
     try {

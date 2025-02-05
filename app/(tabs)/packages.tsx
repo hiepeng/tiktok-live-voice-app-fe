@@ -12,9 +12,9 @@ import {
 } from "react-native";
 import Header from "@/components/Header";
 import { MaterialIcons } from "@expo/vector-icons";
-import { Package, SubscriptionType } from "@/interfaces/package.interface";
 import { useSubscriptionStore } from "@/store/useSubscriptionStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Package, SubscriptionType } from "@/interfaces/package.interface";
 
 export default function PackagesScreen() {
   const {
@@ -135,22 +135,28 @@ export default function PackagesScreen() {
 
     if (!currentSubscription) return null;
 
+    const isActive = currentSubscription.type === SubscriptionType.FREE || 
+      (currentSubscription.endDate && new Date(currentSubscription.endDate) > new Date());
+
     return (
       <View style={styles.currentPackageContainer}>
         <View style={styles.currentPackageHeader}>
           <Text style={styles.currentPackageTitle}>Current Subscription</Text>
-          <View style={[styles.statusBadge, { backgroundColor: currentSubscription.isActive ? "#4CAF50" : "#FF9800" }]}>
-            <Text style={styles.statusText}>{currentSubscription.isActive ? "Active" : "Expired"}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: isActive ? "#4CAF50" : "#FF9800" }]}>
+            <Text style={styles.statusText}>{isActive ? "Active" : "Expired"}</Text>
           </View>
         </View>
 
         <View style={styles.currentPackageContent}>
           <Text style={styles.packageName}>{currentSubscription.type}</Text>
-          {currentSubscription.expiryDate && (
+          {currentSubscription.endDate && (
             <Text style={styles.expiryDate}>
-              Expires: {new Date(currentSubscription.expiryDate).toLocaleDateString()}
+              Expires: {new Date(currentSubscription.endDate).toLocaleDateString()}
             </Text>
           )}
+          <Text style={styles.subscriptionDetails}>
+            Started: {new Date(currentSubscription.startDate).toLocaleDateString()}
+          </Text>
         </View>
       </View>
     );
@@ -384,5 +390,10 @@ const styles = StyleSheet.create({
   },
   customButtonText: {
     color: "#fff",
+  },
+  subscriptionDetails: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
   },
 });
