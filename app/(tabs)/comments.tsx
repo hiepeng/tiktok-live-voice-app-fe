@@ -8,17 +8,19 @@ import * as Speech from "expo-speech";
 import OptionsModal from "@/components/comments/OptionsModal";
 import { MAX_COMMENTS } from "@/constants/config";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import SettingsModal from "@/components/comments/SettingsModal";
 
 const { width } = Dimensions.get("window");
 
 const CommentsScreen = () => {
-  const { comments, clearComments } = useCommentStore();
+  const { comments, maxComments } = useCommentStore();
   const flatListRef = useRef(null);
   const [isAtEnd, setIsAtEnd] = useState(true);
   const [isLayoutComplete, setIsLayoutComplete] = useState(false);
   const [isAutoScrolling, setIsAutoScrolling] = useState(false);
   const [isTTSEnabled, setIsTTSEnabled] = useState(false);
   const [showOptionsModal, setShowOptionsModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('vi-VN');
 
   // Kiểm tra vị trí cuộn
@@ -129,15 +131,20 @@ const CommentsScreen = () => {
   );
 
   const SpeakerButton = (
-    <TouchableOpacity onPress={() => setShowOptionsModal(true)}>
-      <Ionicons name="volume-high-outline" size={24} color="#000" />
-    </TouchableOpacity>
+    <View style={{ flexDirection: 'row', gap: 15 }}>
+      <TouchableOpacity onPress={() => setShowOptionsModal(true)}>
+        <Ionicons name="volume-high-outline" size={24} color="#000" />
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => setShowSettingsModal(true)}>
+        <Ionicons name="settings-outline" size={24} color="#000" />
+      </TouchableOpacity>
+    </View>
   );
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <Header
-        title={`Comments (${comments.length > MAX_COMMENTS-1 ? MAX_COMMENTS + "+" : comments.length})`}
+        title={`Comments (${comments.length > maxComments-1 ? maxComments + "+" : comments.length})`}
         rightComponent={SpeakerButton}
       />
       <View style={styles.listWrapper}>
@@ -178,7 +185,6 @@ const CommentsScreen = () => {
       <OptionsModal
         visible={showOptionsModal}
         onClose={() => setShowOptionsModal(false)}
-        onClearComments={clearComments}
         isTTSEnabled={isTTSEnabled}
         onToggleTTS={() => {
           setIsTTSEnabled(!isTTSEnabled);
@@ -189,6 +195,11 @@ const CommentsScreen = () => {
         }}
         selectedLanguage={selectedLanguage}
         onLanguageChange={handleLanguageChange}
+      />
+
+      <SettingsModal
+        visible={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
       />
     </SafeAreaView>
   );
