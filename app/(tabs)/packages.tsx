@@ -13,7 +13,6 @@ import {
 import Header from "@/components/Header";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useSubscriptionStore } from "@/store/useSubscriptionStore";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Package, SubscriptionType } from "@/interfaces/package.interface";
 
 export default function PackagesScreen() {
@@ -135,28 +134,48 @@ export default function PackagesScreen() {
 
     if (!currentSubscription) return null;
 
-    const isActive = currentSubscription.type === SubscriptionType.FREE || 
-      (currentSubscription.endDate && new Date(currentSubscription.endDate) > new Date());
-
     return (
       <View style={styles.currentPackageContainer}>
         <View style={styles.currentPackageHeader}>
-          <Text style={styles.currentPackageTitle}>Current Subscription</Text>
-          <View style={[styles.statusBadge, { backgroundColor: isActive ? "#4CAF50" : "#FF9800" }]}>
-            <Text style={styles.statusText}>{isActive ? "Active" : "Expired"}</Text>
-          </View>
+          <Text style={styles.currentPackageTitle}>Current Package</Text>
+          {currentSubscription.type !== SubscriptionType.FREE && (
+            <View style={[styles.statusBadge, { backgroundColor:  "#4CAF50"  }]}>
+              <Text style={styles.statusText}>{ "Active" }</Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.currentPackageContent}>
-          <Text style={styles.packageName}>{currentSubscription.type}</Text>
-          {currentSubscription.endDate && (
+          <Text style={styles.packageName}>{currentSubscription.name}</Text>
+          {currentSubscription.type !== SubscriptionType.FREE && currentSubscription.endDate && (
             <Text style={styles.expiryDate}>
-              Expires: {new Date(currentSubscription.endDate).toLocaleDateString()}
+              Expires: {currentSubscription.endDate.toLocaleDateString()}
             </Text>
           )}
-          <Text style={styles.subscriptionDetails}>
-            Started: {new Date(currentSubscription.startDate).toLocaleDateString()}
-          </Text>
+          <View style={styles.featuresContainer}>
+            <View style={styles.featureItem}>
+              <MaterialIcons name="check-circle" size={20} color="#4CAF50" />
+              <Text style={styles.featureText}>
+                {currentSubscription.maxDuration === -1 
+                  ? "Unlimited stream duration" 
+                  : `${currentSubscription.maxDuration} minutes per stream`}
+              </Text>
+            </View>
+            <View style={styles.featureItem}>
+              <MaterialIcons name="check-circle" size={20} color="#4CAF50" />
+              <Text style={styles.featureText}>
+                {`${currentSubscription.maxConcurrentStreams} concurrent ${
+                  currentSubscription.maxConcurrentStreams > 1 ? "streams" : "stream"
+                }`}
+              </Text>
+            </View>
+            {currentSubscription.features?.map((feature, index) => (
+              <View key={index} style={styles.featureItem}>
+                <MaterialIcons name="check-circle" size={20} color="#4CAF50" />
+                <Text style={styles.featureText}>{feature}</Text>
+              </View>
+            ))}
+          </View>
         </View>
       </View>
     );
@@ -197,7 +216,7 @@ export default function PackagesScreen() {
             </View>
           </>
         )}
-        {pkg.features.map((feature, index) => (
+        {pkg.features?.map((feature, index) => (
           <View key={index} style={styles.featureItem}>
             <MaterialIcons name="check-circle" size={20} color="#4CAF50" />
             <Text style={styles.featureText}>{feature}</Text>
@@ -232,7 +251,7 @@ export default function PackagesScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={styles.container}>
       <Header title="Packages" />
       <FlatList
         data={[
@@ -247,8 +266,7 @@ export default function PackagesScreen() {
             features: [
               "unlimited most advanced functions, and additional special functions upon request",
               "Dedicated support team",
-            ],
-            isActive: true,
+            ]
           },
         ]}
         renderItem={renderPackage}

@@ -1,11 +1,13 @@
 import { create } from 'zustand';
 import { api } from '../services/api';
-import { SubscriptionType } from '../interfaces/package.interface';
+import { Package, SubscriptionType } from '../interfaces/package.interface';
 
-
+interface CurrentPackage extends Package {
+  endDate?: Date;
+}
 
 interface SubscriptionState {
-  currentSubscription: Subscription | null;
+  currentSubscription: CurrentPackage | null;
   isLoading: boolean;
   error: string | null;
   packages: Package[];
@@ -24,8 +26,12 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   fetchCurrentSubscription: async () => {
     try {
       set({ isLoading: true });
-      const response = await api.get('/subscriptions/current');
-      set({ currentSubscription: response.data, error: null });
+      const response = await api.get<CurrentPackage>('/subscriptions/current');
+      const subscription = response.data;
+      if (subscription.endDate) {
+        subscription.endDate = new Date(subscription.endDate);
+      }
+      set({ currentSubscription: subscription, error: null });
     } catch (error) {
       set({ error: 'Failed to fetch subscription' });
     } finally {

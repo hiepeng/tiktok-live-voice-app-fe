@@ -14,6 +14,7 @@ export interface Package {
   maxDuration: number;
   maxConcurrentStreams: number;
   features: string[];
+  endDate?: Date;
 }
 
 export interface Subscription {
