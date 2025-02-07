@@ -6,7 +6,6 @@ import { Ionicons } from "@expo/vector-icons";
 import Header from "../../components/Header";
 import * as Speech from "expo-speech";
 import OptionsModal from "@/components/comments/OptionsModal";
-import { MAX_COMMENTS } from "@/constants/config";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SettingsModal from "@/components/comments/SettingsModal";
 

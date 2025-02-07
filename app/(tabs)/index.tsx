@@ -5,6 +5,8 @@ import { useSocket } from "../../hooks/useSocket";
 import { useCommentStore } from "@/store/useCommentStore";
 import { MaterialIcons } from "@expo/vector-icons";
 import Header from '../../components/Header';
+import { useRouter } from "expo-router";
+import { useSubscriptionStore } from "@/store/useSubscriptionStore";
 
 interface Metadata {
   viewCount?: number;
@@ -18,6 +20,7 @@ interface UrlItem {
   status: "idle" | "pending" | "decoding" | "running" | "stop" | "stopping";
   createdAt: Date;
   metadata?: Metadata;
+  key?: string;
 }
 
 interface StartResponse {
@@ -52,6 +55,8 @@ const FullScreenWebView: React.FC = () => {
   const socket = useSocket();
   const [urls, setUrls] = useState<UrlItem[]>([]);
   const [newUrl, setNewUrl] = useState("");
+  const router = useRouter();
+  const { currentSubscription } = useSubscriptionStore();
 
   useEffect(() => {
     const fetchInitialUrls = async () => {
@@ -122,6 +127,30 @@ const FullScreenWebView: React.FC = () => {
     };
   }, [socket]);
 
+  const handleError = (error: Error) => {
+    if (error.message.startsWith("Maximum concurrent streams")) {
+      Alert.alert(
+        "Package Limit Reached",
+        `Your current package (${currentSubscription?.name}) allows maximum ${currentSubscription?.maxConcurrentStreams} concurrent ${
+          currentSubscription?.maxConcurrentStreams && currentSubscription?.maxConcurrentStreams > 1 ? "streams" : "stream"
+        }. Would you like to upgrade your package?`,
+        [
+          {
+            text: "Upgrade Package",
+            onPress: () => router.push("/(tabs)/packages"),
+            style: "default"
+          },
+          {
+            text: "Cancel",
+            style: "cancel"
+          }
+        ]
+      );
+    } else {
+      Alert.alert("Error", error.message);
+    }
+  };
+
   const handleAddUrl = async () => {
     if (!newUrl.trim()) {
       Alert.alert("Error", "Please enter a valid URL");
@@ -137,6 +166,7 @@ const FullScreenWebView: React.FC = () => {
           url: newUrl,
           status: "decoding",
           createdAt: new Date(res.data.createdAt),
+          key: `${res.data.taskId}_${Date.now()}`,
         },
         ...prevUrls,
       ]);
@@ -144,7 +174,11 @@ const FullScreenWebView: React.FC = () => {
       setNewUrl("");
       Alert.alert("Success", "Started decoding TikTok live stream");
     } catch (error) {
-      Alert.alert("Error", error instanceof Error ? error.message : "Unknown error occurred");
+      if(error instanceof Error) {
+        handleError(error);
+      } else {
+        Alert.alert("Error", "Unknown error occurred");
+      }
     }
   };
 
@@ -184,7 +218,7 @@ const FullScreenWebView: React.FC = () => {
           {urls
             .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
             .map(item => (
-              <View key={item.taskId} style={styles.urlContainer}>
+              <View key={item.key || item.taskId} style={styles.urlContainer}>
                 <View style={styles.streamInfo}>
                   <Text style={styles.urlText} numberOfLines={1}>
                     {item.url}
