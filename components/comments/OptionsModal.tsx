@@ -6,7 +6,6 @@ import { Picker } from '@react-native-picker/picker';
 interface OptionsModalProps {
   visible: boolean;
   onClose: () => void;
-  onClearComments: () => void;
   isTTSEnabled: boolean;
   onToggleTTS: () => void;
   selectedLanguage: string;
@@ -56,7 +55,6 @@ const LANGUAGES = [
 export const OptionsModal: React.FC<OptionsModalProps> = ({
   visible,
   onClose,
-  onClearComments,
   isTTSEnabled,
   onToggleTTS,
   selectedLanguage,
@@ -114,19 +112,6 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
               </View>
             </View>
           )}
-
-          <TouchableOpacity 
-            style={[styles.modalButton, styles.deleteButton]}
-            onPress={() => {
-              onClearComments();
-              onClose();
-            }}
-          >
-            <Ionicons name="trash-outline" size={24} color="#ff4444" />
-            <Text style={[styles.modalButtonText, styles.deleteText]}>
-              Clear Comments
-            </Text>
-          </TouchableOpacity>
         </View>
       </TouchableOpacity>
     </Modal>
@@ -166,14 +151,6 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     fontSize: 16,
     color: '#000',
-  },
-  deleteButton: {
-    marginTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  deleteText: {
-    color: '#ff4444',
   },
   languageSection: {
     paddingHorizontal: 16,
