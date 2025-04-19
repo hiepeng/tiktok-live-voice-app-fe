@@ -3,6 +3,7 @@ import { Slot, useRouter } from "expo-router";
 import { Linking } from "react-native";
 import { useUserStore } from "../store/useUserStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ToastRoot } from "../components/Toast";
 
 export default function RootLayout() {
   const router = useRouter();
@@ -56,5 +57,10 @@ export default function RootLayout() {
     }
   };
 
-  return <Slot />;
+  return (
+    <>
+      <Slot />
+      <ToastRoot />
+    </>
+  );
 }

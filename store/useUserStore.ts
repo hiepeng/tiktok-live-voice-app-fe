@@ -4,6 +4,7 @@ import { api } from "../services/api";
 import { ProfileResponse } from "@/services/userInterface";
 import * as WebBrowser from "expo-web-browser";
 import { useRouter } from "expo-router";
+const router = useRouter();
 
 // Đăng ký WebBrowser.maybeCompleteAuthSession
 WebBrowser.maybeCompleteAuthSession();
@@ -89,7 +90,6 @@ export const useUserStore = create<UserState>()(
     },
 
     signOut: async () => {
-      const router = useRouter();
       router.replace("/auth/login");
       set({
         token: null,

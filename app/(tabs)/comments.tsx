@@ -1,10 +1,10 @@
 import React, { useRef, useState, useEffect } from "react";
 import { StyleSheet, View, SafeAreaView, Text, FlatList, Image, Dimensions, TouchableOpacity } from "react-native";
 import { useCommentStore } from "@/store/useCommentStore";
+import { useTTSStore } from '@/store/useTTSStore';
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Header from "../../components/Header";
-import * as Speech from "expo-speech";
 import OptionsModal from "@/components/comments/OptionsModal";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SettingsModal from "@/components/comments/SettingsModal";
@@ -13,14 +13,15 @@ const { width } = Dimensions.get("window");
 
 const CommentsScreen = () => {
   const { comments, maxComments } = useCommentStore();
+  const { speak, stop, isSpeaking, language, autoRead, toggleAutoRead } = useTTSStore();
   const flatListRef = useRef(null);
   const [isAtEnd, setIsAtEnd] = useState(true);
   const [isLayoutComplete, setIsLayoutComplete] = useState(false);
   const [isAutoScrolling, setIsAutoScrolling] = useState(false);
-  const [isTTSEnabled, setIsTTSEnabled] = useState(false);
   const [showOptionsModal, setShowOptionsModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('vi-VN');
+  const [pressedCommentId, setPressedCommentId] = useState<string | null>(null);
 
   // Kiểm tra vị trí cuộn
   const handleScroll = event => {
@@ -59,45 +60,37 @@ const CommentsScreen = () => {
 
   // Xử lý TTS khi có comment mới
   useEffect(() => {
-    if (isTTSEnabled && comments.length > 0) {
+    if (autoRead && comments.length > 0) {
       const latestComment = comments[comments.length - 1];
-      Speech.speak(`${latestComment.author.name}: ${latestComment.text}`, {
-        language: selectedLanguage,
-        pitch: 1.0,
-        rate: 1.0,
-      });
+      speak(`${latestComment.author.name}: ${latestComment.text}`, language);
     }
-  }, [comments, isTTSEnabled, selectedLanguage]);
+  }, [comments, autoRead, language, speak]);
 
   // Dừng TTS khi unmount component
   useEffect(() => {
     return () => {
-      Speech.stop();
+      stop();
     };
-  }, []);
+  }, [stop]);
 
   const handleLanguageChange = (language: string) => {
     setSelectedLanguage(language);
     AsyncStorage.setItem('tts-language', language);
-    // Dừng TTS hiện tại khi thay đổi ngôn ngữ
-    Speech.stop();
+    stop();
   };
 
   const handleCommentPress = (comment: any) => {
-    // Dừng TTS hiện tại trước khi đọc comment mới
-    Speech.stop();
-    
-    Speech.speak(`${comment.author.name}: ${comment.text}`, {
-      language: selectedLanguage,
-      pitch: 1.0,
-      rate: 1.0,
-    });
+    setPressedCommentId(comment.id);
+    stop();
+    speak(`${comment.author.name}: ${comment.text}`, selectedLanguage);
+    setTimeout(() => setPressedCommentId(null), 200); // hiệu ứng bấm 200ms
   };
 
   const renderComment = ({ item, index }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       onPress={() => handleCommentPress(item)}
-      activeOpacity={0.7}  // Luôn hiển thị hiệu ứng nhấn
+      activeOpacity={0.5}
+      style={pressedCommentId === item.id ? { opacity: 0.6 } : undefined}
     >
       <LinearGradient
         colors={index % 2 === 0 ? ["#f6f9fc", "#ffffff"] : ["#ffffff", "#f6f9fc"]}
@@ -133,9 +126,9 @@ const CommentsScreen = () => {
     <View style={{ flexDirection: 'row', gap: 15 }}>
       <TouchableOpacity onPress={() => setShowOptionsModal(true)}>
         <Ionicons 
-          name={isTTSEnabled ? "volume-high" : "volume-mute"} 
+          name={autoRead ? "volume-high" : "volume-mute"} 
           size={24} 
-          color={isTTSEnabled ? "#0a7ea4" : "#000"} 
+          color={autoRead ? "#0a7ea4" : "#000"} 
         />
       </TouchableOpacity>
       <TouchableOpacity onPress={() => setShowSettingsModal(true)}>
@@ -188,14 +181,8 @@ const CommentsScreen = () => {
       <OptionsModal
         visible={showOptionsModal}
         onClose={() => setShowOptionsModal(false)}
-        isTTSEnabled={isTTSEnabled}
-        onToggleTTS={() => {
-          setIsTTSEnabled(!isTTSEnabled);
-          // Dừng TTS khi tắt chức năng
-          if (isTTSEnabled) {
-            Speech.stop();
-          }
-        }}
+        isSpeaking={autoRead}
+        onToggleSpeaking={toggleAutoRead}
         selectedLanguage={selectedLanguage}
         onLanguageChange={handleLanguageChange}
       />
@@ -229,6 +216,15 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.1,
     shadowRadius: 2,
+    elevation: 2,
+  },
+  pressedCommentItem: {
+    backgroundColor: '#e0f7fa',
+    transform: [{ scale: 0.97 }],
+    shadowColor: '#1976D2',
+    shadowOpacity: 0.18,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
     elevation: 2,
   },
   avatarContainer: {

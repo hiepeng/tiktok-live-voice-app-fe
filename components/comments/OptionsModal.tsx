@@ -1,13 +1,12 @@
 import React from 'react';
-import { Modal, TouchableOpacity, View, Text, StyleSheet } from 'react-native';
+import { Modal, TouchableOpacity, View, Text, StyleSheet, Pressable, FlatList, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker';
 
 interface OptionsModalProps {
   visible: boolean;
   onClose: () => void;
-  isTTSEnabled: boolean;
-  onToggleTTS: () => void;
+  isSpeaking: boolean;
+  onToggleSpeaking: () => void;
   selectedLanguage: string;
   onLanguageChange: (language: string) => void;
 }
@@ -52,74 +51,72 @@ const LANGUAGES = [
   { label: 'Vietnamese', value: 'vi' }
 ].sort((a, b) => a.label.localeCompare(b.label));
 
+const MAX_HEIGHT = Dimensions.get('window').height * 0.6;
+
 export const OptionsModal: React.FC<OptionsModalProps> = ({
   visible,
   onClose,
-  isTTSEnabled,
-  onToggleTTS,
+  isSpeaking,
+  onToggleSpeaking,
   selectedLanguage,
   onLanguageChange,
 }) => {
   return (
     <Modal
-      animationType="fade"
-      transparent={true}
       visible={visible}
+      transparent
+      animationType="slide"
       onRequestClose={onClose}
     >
-      <TouchableOpacity 
-        style={styles.modalOverlay} 
-        activeOpacity={1} 
-        onPress={onClose}
-      >
-        <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+      <View style={styles.overlay}>
+        <TouchableOpacity style={StyleSheet.absoluteFill} onPress={onClose} activeOpacity={1} />
+        <View style={styles.modalContent}>
           <TouchableOpacity 
             style={styles.modalButton}
-            onPress={() => {
-              onToggleTTS();
-            }}
+            onPress={onToggleSpeaking}
           >
             <Ionicons 
-              name={isTTSEnabled ? "volume-mute-outline" : "volume-high-outline"} 
+              name={isSpeaking ? "volume-mute-outline" : "volume-high-outline"} 
               size={24} 
               color="#000" 
             />
-            <Text style={styles.modalButtonText}>
-              {isTTSEnabled ? 'Turn OFF automatic comment reading' : 'Turn ON automatic comment reading'}
+            <Text style={styles.buttonText}>
+              {isSpeaking ? 'Turn OFF automatic comment reading' : 'Turn ON automatic comment reading'}
             </Text>
           </TouchableOpacity>
-
-          {isTTSEnabled && (
+          {isSpeaking && (
             <View style={styles.languageSection}>
               <Text style={styles.languageLabel}>TTS Language:</Text>
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={selectedLanguage}
-                  onValueChange={onLanguageChange}
-                  style={styles.picker}
-                  dropdownIconColor="#000"
-                  mode="dropdown"
-                >
-                  {LANGUAGES.map((lang) => (
-                    <Picker.Item 
-                      key={lang.value} 
-                      label={lang.label} 
-                      value={lang.value}
-                      style={styles.pickerItem}
-                    />
-                  ))}
-                </Picker>
+              <View style={[styles.pickerContainer, { maxHeight: MAX_HEIGHT }]}> 
+                <FlatList
+                  data={LANGUAGES}
+                  keyExtractor={item => item.value}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={[
+                        styles.languageOption,
+                        selectedLanguage === item.value && styles.selectedLanguageOption,
+                      ]}
+                      onPress={() => onLanguageChange(item.value)}
+                    >
+                      <Text style={selectedLanguage === item.value ? styles.selectedLanguageText : styles.languageText}>
+                        {item.label}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                  showsVerticalScrollIndicator={false}
+                />
               </View>
             </View>
           )}
         </View>
-      </TouchableOpacity>
+      </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
@@ -139,6 +136,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+    alignSelf: 'center',
   },
   modalButton: {
     flexDirection: 'row',
@@ -147,7 +145,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 8,
   },
-  modalButtonText: {
+  buttonText: {
     marginLeft: 12,
     fontSize: 16,
     color: '#000',
@@ -173,14 +171,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     marginBottom: 8,
   },
-  picker: {
-    height: 50,
-    width: '100%',
-    color: '#000',
+  languageOption: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
   },
-  pickerItem: {
+  selectedLanguageOption: {
+    backgroundColor: '#e3f2fd',
+    borderRadius: 6,
+  },
+  languageText: {
     fontSize: 16,
-    color: '#000',
+    color: '#333',
+  },
+  selectedLanguageText: {
+    fontSize: 16,
+    color: '#1976D2',
+    fontWeight: 'bold',
   },
 });
 

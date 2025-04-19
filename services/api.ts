@@ -1,3 +1,4 @@
+import { showToast } from "@/components/Toast";
 import { BACKEND_URL } from "../constants/config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -34,7 +35,8 @@ class ApiService {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error(data)
+      console.error(data, '333')
+      showToast(data.message || "API request failed", false);
       throw new Error(data.message || "API request failed");
     }
 

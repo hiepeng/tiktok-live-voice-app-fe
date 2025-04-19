@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { useUserStore } from "../../store/useUserStore";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useState } from "react";
-import CommentHistory from "@/components/profile/CommentHistory";
+import CommentHistory from "../../components/CommentHistory";
 import Header from "../../components/Header";
 
 export default function ProfileScreen() {

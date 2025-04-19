@@ -1,7 +1,8 @@
+// Store quản lý comment items
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-interface Comment {
+export interface Comment {
   id: string;
   text: string;
   author: {
@@ -33,7 +34,6 @@ export const useCommentStore = create<CommentState>((set, get) => ({
   isLoading: false,
   error: null,
   maxComments: DEFAULT_MAX_COMMENTS,
-
   addComment: (comment) =>
     set((state) => {
       const newComments = [...state.comments, comment];
@@ -42,24 +42,21 @@ export const useCommentStore = create<CommentState>((set, get) => ({
       }
       return { comments: newComments };
     }),
-    
   setLoading: (loading) => set({ isLoading: loading }),
   setError: (error) => set({ error }),
   clearComments: () => set({ comments: [] }),
-
   setMaxComments: async (value: number) => {
     await AsyncStorage.setItem(STORAGE_KEY, value.toString());
     set((state) => {
       if (state.comments.length > value) {
         return {
           maxComments: value,
-          comments: state.comments.slice(-value)
+          comments: state.comments.slice(-value),
         };
       }
       return { maxComments: value };
     });
   },
-
   initializeMaxComments: async () => {
     try {
       const savedValue = await AsyncStorage.getItem(STORAGE_KEY);
@@ -69,7 +66,7 @@ export const useCommentStore = create<CommentState>((set, get) => ({
           if (state.comments.length > maxComments) {
             return {
               maxComments,
-              comments: state.comments.slice(-maxComments)
+              comments: state.comments.slice(-maxComments),
             };
           }
           return { maxComments };

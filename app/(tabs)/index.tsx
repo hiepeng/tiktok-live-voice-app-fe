@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { StyleSheet, View, SafeAreaView, Text, TextInput, TouchableOpacity, Alert, ScrollView } from "react-native";
-import { api } from "@/services/api";
 import { useSocket } from "../../hooks/useSocket";
 import { useCommentStore } from "@/store/useCommentStore";
+import { useCommentUrlStore } from "@/store/useCommentUrlStore";
+import { useSubscriptionStore } from "@/store/useSubscriptionStore";
+import { useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import Header from "../../components/Header";
-import { useRouter } from "expo-router";
-import { useSubscriptionStore } from "@/store/useSubscriptionStore";
 
 interface Metadata {
   viewCount?: number;
@@ -23,20 +23,6 @@ interface UrlItem {
   key?: string;
 }
 
-interface StartResponse {
-  taskId: string;
-  createdAt: string; // ISO string from server
-}
-
-interface ApiResponse {
-  data: {
-    _id: string;
-    source: string;
-    status: string;
-    createdAt: string;
-  }[];
-}
-
 interface Comment {
   id: string;
   text: string;
@@ -51,34 +37,13 @@ interface Comment {
 
 const FullScreenWebView: React.FC = () => {
   const socket = useSocket();
-  const [urls, setUrls] = useState<UrlItem[]>([]);
+  const { urls, fetchActiveUrls, startUrl, stopUrl } = useCommentUrlStore();
   const [newUrl, setNewUrl] = useState("");
   const router = useRouter();
   const { currentSubscription } = useSubscriptionStore();
 
   useEffect(() => {
-    const fetchInitialUrls = async () => {
-      try {
-        const response = await api.get<ApiResponse>("/comments/active");
-        console.log(response, "response");
-        if (response?.data && Array.isArray(response.data)) {
-          const activeUrls = response.data.map(item => ({
-            taskId: item._id,
-            url: item.source,
-            status: item.status as UrlItem["status"],
-            createdAt: new Date(item.createdAt),
-          }));
-
-          if (activeUrls.length > 0) {
-            setUrls(activeUrls);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch initial URLs:", error);
-      }
-    };
-
-    fetchInitialUrls();
+    fetchActiveUrls();
   }, []);
 
   useEffect(() => {
@@ -88,18 +53,11 @@ const FullScreenWebView: React.FC = () => {
       if (message.act === "update") {
         const content = message.info;
 
-        setUrls(prevUrls =>
-          prevUrls.map(item => (item.taskId === content.taskId ? { ...item, status: "running" } : item)),
-        );
-
         if (message.name === "comment") {
           message.data.forEach((comment: Comment) => {
             useCommentStore.getState().addComment(comment);
           });
         } else if (message.name === "metadata") {
-          setUrls(prevUrls =>
-            prevUrls.map(item => (item.taskId === content.taskId ? { ...item, metadata: message.data } : item)),
-          );
           console.log(1);
           console.log(message);
         } else if (message.name === "join") {
@@ -152,21 +110,8 @@ const FullScreenWebView: React.FC = () => {
       Alert.alert("Error", "Please enter a valid URL");
       return;
     }
-
     try {
-      const res = await api.post<StartResponse>("/comments/start", { url: newUrl });
-
-      setUrls(prevUrls => [
-        {
-          taskId: res.taskId,
-          url: newUrl,
-          status: "decoding",
-          createdAt: new Date(res.createdAt),
-          key: `${res.taskId}_${Date.now()}`,
-        },
-        ...prevUrls,
-      ]);
-
+      await startUrl(newUrl);
       setNewUrl("");
       Alert.alert("Success", "Started decoding TikTok live stream");
     } catch (error) {
@@ -178,14 +123,11 @@ const FullScreenWebView: React.FC = () => {
     }
   };
 
-  const stopStream = async (taskId: string) => {
+  const handleStopStream = async (taskId: string) => {
     try {
-      setUrls(urls.map(item => (item.taskId === taskId ? { ...item, status: "pending" } : item)));
-      await api.post("/comments/stop", { taskId });
-      setUrls(urls.map(item => (item.taskId === taskId ? { ...item, status: "stop" } : item)));
+      await stopUrl(taskId);
     } catch (error) {
       Alert.alert("Error", "Failed to stop stream");
-      setUrls(urls.map(item => (item.taskId === taskId ? { ...item, status: "running" } : item)));
     }
   };
 
@@ -250,7 +192,7 @@ const FullScreenWebView: React.FC = () => {
                     (item.status === "pending" || item.status === "stop" || item.status === "stopping") &&
                       styles.buttonDisabled,
                   ]}
-                  onPress={() => (item.status === "running" ? stopStream(item.taskId) : null)}
+                  onPress={() => (item.status === "running" ? handleStopStream(item.taskId) : null)}
                   disabled={item.status === "pending" || item.status === "stop" || item.status === "stopping"}
                 >
                   <Text style={styles.buttonText}>
