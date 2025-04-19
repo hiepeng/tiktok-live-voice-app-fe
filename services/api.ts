@@ -13,8 +13,7 @@ class ApiService {
   }
 
   private async request<T>(endpoint: string, config: RequestConfig = {}): Promise<T> {
-    const token = await AsyncStorage.getItem("user-storage");
-    const parsedToken = token ? JSON.parse(token).state.token : null;
+    const token = await AsyncStorage.getItem("token");
     const { token: configToken, ...restConfig } = config;
 
     const headers: Record<string, string> = {
@@ -22,8 +21,8 @@ class ApiService {
       ...(config.headers as Record<string, string>),
     };
 
-    if (parsedToken) {
-      headers["Authorization"] = `Bearer ${parsedToken}`;
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
     }
 
     const url = `${this.baseUrl}${endpoint}`;
@@ -39,7 +38,8 @@ class ApiService {
       throw new Error(data.message || "API request failed");
     }
 
-    return data;
+    // Always wrap response in { data }
+    return data.data;
   }
 
   public async get<T>(endpoint: string, config?: RequestConfig): Promise<T> {

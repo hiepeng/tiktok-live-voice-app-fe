@@ -1,55 +1,60 @@
-import { useEffect, useState } from "react";
-import { Slot, useRouter, useSegments } from "expo-router";
+import { useEffect } from "react";
+import { Slot, useRouter } from "expo-router";
+import { Linking } from "react-native";
 import { useUserStore } from "../store/useUserStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { View, ActivityIndicator } from "react-native";
 
 export default function RootLayout() {
-  const { token, validateToken } = useUserStore();
-  const segments = useSegments();
   const router = useRouter();
-  const [isValidated, setIsValidated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const isAuthenticated = useUserStore(state => state.isAuthenticated);
+  const validateToken = useUserStore(state => state.validateToken);
 
-  // Chỉ validate token một lần khi app khởi động
   useEffect(() => {
-    const validateOnLaunch = async () => {
-      try {
-        if (token && !isValidated) {
-          const isValid = await validateToken();
-          setIsValidated(true);
-
-          if (!isValid) {
-            await AsyncStorage.removeItem("token");
-            setIsLoading(false);
-            return;
-          }
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    validateOnLaunch();
-  }, [token]);
-
-  // Kiểm tra route protection sau khi đã load xong
-  useEffect(() => {
-    if (!isLoading) {
-      const inAuthGroup = segments[0] === "auth";
-      if (!token && !inAuthGroup) {
+    const checkAuthAndRedirect = async () => {
+      const valid = await validateToken();
+      if (!valid) {
         router.replace("/auth/login");
       }
-    }
-  }, [segments, isLoading]);
+    };
+    
+    checkAuthAndRedirect();
 
-  if (isLoading) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#fff" }}>
-        <ActivityIndicator size="large" color="#4c669f" />
-      </View>
-    );
-  }
+    // Xử lý deep linking
+    const handleDeepLink = (event: { url: string }) => {
+      const { url } = event;
+
+      if (url.includes("auth")) {
+        const token = url.split("token=")[1];
+        if (token) {
+          handleAuthToken(token);
+        }
+      }
+    };
+    const subscription = Linking.addEventListener("url", handleDeepLink);
+
+    Linking.getInitialURL().then(url => {
+      if (url) {
+        handleDeepLink({ url });
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  const handleAuthToken = async (token: string) => {
+    console.log("deep link")
+    try {
+      await AsyncStorage.setItem("token", token);
+      const res = await validateToken();
+      if (isAuthenticated && res) {
+        router.replace("/(tabs)");
+      }
+    } catch (error) {
+      console.error("Error handling auth token:", error);
+    }
+  };
 
   return <Slot />;
 }

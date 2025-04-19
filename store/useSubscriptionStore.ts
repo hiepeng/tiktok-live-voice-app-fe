@@ -27,7 +27,7 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     try {
       set({ isLoading: true });
       const response = await api.get<CurrentPackage>('/subscriptions/current');
-      const subscription = response.data;
+      const subscription = response;
       if (subscription.endDate) {
         subscription.endDate = new Date(subscription.endDate);
       }
@@ -56,7 +56,7 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     try {
       set({ isLoading: true });
       const response = await api.get<Package[]>('/packages');
-      set({ packages: response.data, error: null });
+      set({ packages: response, error: null });
     } catch (error) {
       set({ error: 'Failed to fetch packages' });
     } finally {

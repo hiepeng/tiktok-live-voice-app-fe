@@ -35,15 +35,15 @@ export default function CommentHistory({ visible, onClose }: CommentHistoryProps
   const fetchCommentHistory = async (pageNum = 1) => {
     try {
       setLoading(true);
-      const response = await api.get(`/comments/history?page=${pageNum}&limit=${ITEMS_PER_PAGE}`);
+      const response = await api.get<{ items: CommentHistory[] }>(`/comments/history?page=${pageNum}&limit=${ITEMS_PER_PAGE}`);
       
       if (pageNum === 1) {
-        setCommentHistory(response.data.items);
+        setCommentHistory(response.items);
       } else {
-        setCommentHistory(prev => [...prev, ...response.data.items]);
+        setCommentHistory(prev => [...prev, ...response.items]);
       }
       
-      setHasMore(response.data.items.length === ITEMS_PER_PAGE);
+      setHasMore(response.items.length === ITEMS_PER_PAGE);
       setPage(pageNum);
     } catch (error) {
       console.error('Error fetching comment history:', error);

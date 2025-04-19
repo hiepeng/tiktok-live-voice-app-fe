@@ -4,7 +4,7 @@ import { api } from "@/services/api";
 import { useSocket } from "../../hooks/useSocket";
 import { useCommentStore } from "@/store/useCommentStore";
 import { MaterialIcons } from "@expo/vector-icons";
-import Header from '../../components/Header';
+import Header from "../../components/Header";
 import { useRouter } from "expo-router";
 import { useSubscriptionStore } from "@/store/useSubscriptionStore";
 
@@ -24,10 +24,8 @@ interface UrlItem {
 }
 
 interface StartResponse {
-  data: {
-    taskId: string;
-    createdAt: string; // ISO string from server
-  };
+  taskId: string;
+  createdAt: string; // ISO string from server
 }
 
 interface ApiResponse {
@@ -68,7 +66,7 @@ const FullScreenWebView: React.FC = () => {
             taskId: item._id,
             url: item.source,
             status: item.status as UrlItem["status"],
-            createdAt: new Date(item.createdAt)
+            createdAt: new Date(item.createdAt),
           }));
 
           if (activeUrls.length > 0) {
@@ -89,7 +87,7 @@ const FullScreenWebView: React.FC = () => {
     socket.on("message-task", message => {
       if (message.act === "update") {
         const content = message.info;
-    
+
         setUrls(prevUrls =>
           prevUrls.map(item => (item.taskId === content.taskId ? { ...item, status: "running" } : item)),
         );
@@ -100,18 +98,14 @@ const FullScreenWebView: React.FC = () => {
           });
         } else if (message.name === "metadata") {
           setUrls(prevUrls =>
-            prevUrls.map(item => 
-              item.taskId === content.taskId 
-                ? { ...item, metadata: message.data }
-                : item
-            )
+            prevUrls.map(item => (item.taskId === content.taskId ? { ...item, metadata: message.data } : item)),
           );
-          console.log(1)
-          console.log(message)
+          console.log(1);
+          console.log(message);
         } else if (message.name === "join") {
-          console.log(2)
+          console.log(2);
         } else {
-          console.log(message.name)
+          console.log(message.name);
         }
       }
     });
@@ -132,19 +126,21 @@ const FullScreenWebView: React.FC = () => {
       Alert.alert(
         "Package Limit Reached",
         `Your current package (${currentSubscription?.name}) allows maximum ${currentSubscription?.maxConcurrentStreams} concurrent ${
-          currentSubscription?.maxConcurrentStreams && currentSubscription?.maxConcurrentStreams > 1 ? "streams" : "stream"
+          currentSubscription?.maxConcurrentStreams && currentSubscription?.maxConcurrentStreams > 1
+            ? "streams"
+            : "stream"
         }. Would you like to upgrade your package?`,
         [
           {
             text: "Upgrade Package",
             onPress: () => router.push("/(tabs)/packages"),
-            style: "default"
+            style: "default",
           },
           {
             text: "Cancel",
-            style: "cancel"
-          }
-        ]
+            style: "cancel",
+          },
+        ],
       );
     } else {
       Alert.alert("Error", error.message);
@@ -162,11 +158,11 @@ const FullScreenWebView: React.FC = () => {
 
       setUrls(prevUrls => [
         {
-          taskId: res.data.taskId,
+          taskId: res.taskId,
           url: newUrl,
           status: "decoding",
-          createdAt: new Date(res.data.createdAt),
-          key: `${res.data.taskId}_${Date.now()}`,
+          createdAt: new Date(res.createdAt),
+          key: `${res.taskId}_${Date.now()}`,
         },
         ...prevUrls,
       ]);
@@ -174,7 +170,7 @@ const FullScreenWebView: React.FC = () => {
       setNewUrl("");
       Alert.alert("Success", "Started decoding TikTok live stream");
     } catch (error) {
-      if(error instanceof Error) {
+      if (error instanceof Error) {
         handleError(error);
       } else {
         Alert.alert("Error", "Unknown error occurred");
@@ -194,7 +190,7 @@ const FullScreenWebView: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <Header title="Home" />
       <ScrollView style={styles.scrollView}>
         <View style={styles.container}>
@@ -243,9 +239,7 @@ const FullScreenWebView: React.FC = () => {
                         </View>
                       </>
                     )}
-                    <Text style={[styles.statusText, getStatusColor(item.status)]}>
-                      {item.status}
-                    </Text>
+                    <Text style={[styles.statusText, getStatusColor(item.status)]}>{item.status}</Text>
                   </View>
                 </View>
 
@@ -305,26 +299,26 @@ const styles = StyleSheet.create({
   },
   urlText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#2c3e50',
+    fontWeight: "500",
+    color: "#2c3e50",
     marginBottom: 6,
   },
   statusText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   urlContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f8f9fa",
     padding: 15,
     borderRadius: 12,
     marginBottom: 12,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -337,15 +331,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     height: 36,
     borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     minWidth: 100,
-    marginBottom: 30
+    marginBottom: 30,
   },
   buttonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   buttonDisabled: {
     opacity: 0.6,
@@ -365,21 +359,21 @@ const styles = StyleSheet.create({
   },
   timeText: {
     fontSize: 12,
-    color: '#7f8c8d',
+    color: "#7f8c8d",
   },
   statsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
   },
   statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 1,
@@ -390,30 +384,39 @@ const styles = StyleSheet.create({
   },
   statText: {
     fontSize: 13,
-    color: '#666',
+    color: "#666",
     marginLeft: 4,
   },
 });
 
 const getStatusColor = (status: string) => ({
-  backgroundColor: 
-    status === 'running' ? '#e3f2fd' :
-    status === 'stopping' ? '#fff3e0' :
-    status === 'decoding' ? '#e8f5e9' :
-    '#f5f5f5',
+  backgroundColor:
+    status === "running"
+      ? "#e3f2fd"
+      : status === "stopping"
+        ? "#fff3e0"
+        : status === "decoding"
+          ? "#e8f5e9"
+          : "#f5f5f5",
   color:
-    status === 'running' ? '#1976d2' :
-    status === 'stopping' ? '#f57c00' :
-    status === 'decoding' ? '#388e3c' :
-    '#9e9e9e',
+    status === "running"
+      ? "#1976d2"
+      : status === "stopping"
+        ? "#f57c00"
+        : status === "decoding"
+          ? "#388e3c"
+          : "#9e9e9e",
 });
 
 const getButtonColor = (status: string) => ({
   backgroundColor:
-    status === 'running' ? '#ef5350' :
-    status === 'stopping' ? '#ff9800' :
-    status === 'decoding' ? '#4caf50' :
-    '#9e9e9e',
+    status === "running"
+      ? "#ef5350"
+      : status === "stopping"
+        ? "#ff9800"
+        : status === "decoding"
+          ? "#4caf50"
+          : "#9e9e9e",
 });
 
 export default FullScreenWebView;

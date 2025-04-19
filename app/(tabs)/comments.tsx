@@ -132,7 +132,11 @@ const CommentsScreen = () => {
   const SpeakerButton = (
     <View style={{ flexDirection: 'row', gap: 15 }}>
       <TouchableOpacity onPress={() => setShowOptionsModal(true)}>
-        <Ionicons name="volume-high-outline" size={24} color="#000" />
+        <Ionicons 
+          name={isTTSEnabled ? "volume-high" : "volume-mute"} 
+          size={24} 
+          color={isTTSEnabled ? "#0a7ea4" : "#000"} 
+        />
       </TouchableOpacity>
       <TouchableOpacity onPress={() => setShowSettingsModal(true)}>
         <Ionicons name="settings-outline" size={24} color="#000" />

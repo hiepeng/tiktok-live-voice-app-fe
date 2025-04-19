@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import Header from "@/components/Header";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useSubscriptionStore } from "@/store/useSubscriptionStore";
 import { Package, SubscriptionType } from "@/interfaces/package.interface";
+import PaymentService from "@/services/PaymentService";
 
 export default function PackagesScreen() {
   const {
@@ -25,11 +26,28 @@ export default function PackagesScreen() {
     purchaseSubscription,
     fetchPackages,
   } = useSubscriptionStore();
+  
+  const [iapInitialized, setIapInitialized] = useState(false);
 
   useEffect(() => {
     fetchCurrentSubscription();
     fetchPackages();
+    initializeIAP();
+    
+    // Cleanup khi component unmount
+    return () => {
+      PaymentService.cleanup();
+    };
   }, []);
+  
+  const initializeIAP = async () => {
+    try {
+      const initialized = await PaymentService.initializeIAP();
+      setIapInitialized(initialized);
+    } catch (error) {
+      console.error('Failed to initialize IAP', error);
+    }
+  };
 
   const handlePurchase = (pkg: Package) => {
     if (pkg.type === SubscriptionType.FREE) {
@@ -70,7 +88,13 @@ export default function PackagesScreen() {
           text: "Confirm",
           onPress: async () => {
             try {
-              await purchaseSubscription(pkg.type, duration);
+              if (iapInitialized) {
+                // Sử dụng thanh toán trong ứng dụng
+                await PaymentService.purchaseSubscription(pkg.type, duration);
+              } else {
+                // Sử dụng thanh toán hiện tại nếu IAP chưa được khởi tạo
+                await purchaseSubscription(pkg.type, duration);
+              }
               
               Alert.alert(
                 "Success",
@@ -84,7 +108,6 @@ export default function PackagesScreen() {
                   }
                 ]
               );
-
             } catch (error) {
               let errorMessage = 'Failed to purchase subscription';
               
@@ -105,6 +128,23 @@ export default function PackagesScreen() {
         },
       ],
     );
+  };
+  
+  // Thêm nút khôi phục giao dịch (chủ yếu cho iOS)
+  const handleRestorePurchases = async () => {
+    try {
+      if (!iapInitialized) {
+        Alert.alert('Error', 'Payment service not initialized');
+        return;
+      }
+      
+      await PaymentService.restorePurchases();
+      fetchCurrentSubscription();
+      Alert.alert('Success', 'Purchases restored successfully');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to restore purchases');
+      console.error('Restore error:', error);
+    }
   };
 
   const handlePackageAction = (pkg: Package) => {
@@ -259,26 +299,26 @@ export default function PackagesScreen() {
           {
             _id: "custom",
             name: "Enterprise",
-            type: SubscriptionType.CUSTOM,
             price: 0,
-            maxDuration: -1,
-            maxConcurrentStreams: -1,
-            features: [
-              "unlimited most advanced functions, and additional special functions upon request",
-              "Dedicated support team",
-            ]
+            maxDuration: 0,
+            maxConcurrentStreams: 0,
+            features: ["Custom features", "Dedicated support", "SLA guarantees"],
+            type: SubscriptionType.CUSTOM,
           },
         ]}
         renderItem={renderPackage}
-        keyExtractor={item => item._id}
+        keyExtractor={(item) => item._id.toString()}
         contentContainerStyle={styles.listContainer}
         ListHeaderComponent={renderCurrentSubscription}
-        refreshing={isLoading}
-        onRefresh={() => {
-          fetchCurrentSubscription();
-          fetchPackages();
-        }}
       />
+      
+      {/* Thêm nút khôi phục giao dịch */}
+      <TouchableOpacity 
+        style={styles.restoreButton} 
+        onPress={handleRestorePurchases}
+      >
+        <Text style={styles.restoreButtonText}>Restore Purchases</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -413,5 +453,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginTop: 4,
+  },
+  restoreButton: {
+    padding: 10,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  restoreButtonText: {
+    color: '#0a7ea4',
+    fontSize: 16,
   },
 });

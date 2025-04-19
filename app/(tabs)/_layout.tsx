@@ -1,17 +1,8 @@
-import { Stack, Tabs } from "expo-router";
+import { Tabs } from "expo-router";
 import React from "react";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useUserStore } from "@/store/useUserStore";
-import { View } from "react-native";
-
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
 
 export default function TabLayout() {
-  const { token } = useUserStore();
-  if (!token) {
-    return <View />;
-  }
 
   return (
     <Tabs
