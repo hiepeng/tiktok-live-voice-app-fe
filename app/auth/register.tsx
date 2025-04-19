@@ -17,7 +17,8 @@ const Register = () => {
     }
 
     try {
-      await signUp(email, password);
+      const res = await signUp(email, password);
+      console.log(res, "res");
       Alert.alert('Success', 'Registration successful', [
         {
           text: 'OK',

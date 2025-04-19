@@ -238,25 +238,25 @@ export default function PackagesScreen() {
     );
   };
 
-  const renderPackage = ({ item: pkg }: { item: Package }) => (
+  const renderPackage = ({ item, index }: { item: Package, index: number }) => (
     <View style={styles.packageCard}>
-      <Text style={styles.packageName}>{pkg.name}</Text>
-      {renderPackagePrice(pkg)}
+      <Text style={styles.packageName}>{item.name}</Text>
+      {renderPackagePrice(item)}
 
       <View style={styles.featuresContainer}>
-        {pkg.type !== SubscriptionType.CUSTOM && (
+        {item.type !== SubscriptionType.CUSTOM && (
           <>
             <View style={styles.featureItem}>
               <MaterialIcons name="check-circle" size={20} color="#4CAF50" />
-              <Text style={styles.featureText}>{pkg.maxDuration + " minutes per stream"}</Text>
+              <Text style={styles.featureText}>{item.maxDuration + " minutes per stream"}</Text>
             </View>
             <View style={styles.featureItem}>
               <MaterialIcons name="check-circle" size={20} color="#4CAF50" />
-              <Text style={styles.featureText}>{pkg.maxConcurrentStreams + " concurrent stream"}</Text>
+              <Text style={styles.featureText}>{item.maxConcurrentStreams + " concurrent stream"}</Text>
             </View>
           </>
         )}
-        {pkg.features?.map((feature, index) => (
+        {item.features?.map((feature, index) => (
           <View key={index} style={styles.featureItem}>
             <MaterialIcons name="check-circle" size={20} color="#4CAF50" />
             <Text style={styles.featureText}>{feature}</Text>
@@ -267,22 +267,22 @@ export default function PackagesScreen() {
       <TouchableOpacity
         style={[
           styles.buyButton,
-          pkg.type === SubscriptionType.CUSTOM && styles.customButton,
-          currentSubscription?.type === pkg.type && styles.currentPlanButton,
+          item.type === SubscriptionType.CUSTOM && styles.customButton,
+          currentSubscription?.type === item.type && styles.currentPlanButton,
         ]}
-        onPress={() => handlePackageAction(pkg)}
-        disabled={currentSubscription?.type === pkg.type}
+        onPress={() => handlePackageAction(item)}
+        disabled={currentSubscription?.type === item.type}
       >
         <Text
           style={[
             styles.buyButtonText,
-            pkg.type === SubscriptionType.CUSTOM && styles.customButtonText,
-            currentSubscription?.type === pkg.type && { color: "#fff" },
+            item.type === SubscriptionType.CUSTOM && styles.customButtonText,
+            currentSubscription?.type === item.type && { color: "#fff" },
           ]}
         >
-          {pkg.type === SubscriptionType.CUSTOM
+          {item.type === SubscriptionType.CUSTOM
             ? "Contact Us"
-            : currentSubscription?.type === pkg.type
+            : currentSubscription?.type === item.type
               ? "Current Plan"
               : "Choose Plan"}
         </Text>
@@ -306,19 +306,18 @@ export default function PackagesScreen() {
             type: SubscriptionType.CUSTOM,
           },
         ]}
-        renderItem={renderPackage}
+        renderItem={({ item, index }) => renderPackage({ item, index })}
         keyExtractor={(item) => item._id.toString()}
-        contentContainerStyle={styles.listContainer}
-        ListHeaderComponent={renderCurrentSubscription}
+        contentContainerStyle={[styles.listContainer, { paddingTop: 24 }]}
       />
       
       {/* Thêm nút khôi phục giao dịch */}
-      <TouchableOpacity 
+      {/* <TouchableOpacity 
         style={styles.restoreButton} 
         onPress={handleRestorePurchases}
       >
         <Text style={styles.restoreButtonText}>Restore Purchases</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </SafeAreaView>
   );
 }

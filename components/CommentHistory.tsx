@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useImperativeHandle, forwardRef } from "react";
 import { View, Text, StyleSheet, Pressable, Modal, FlatList, ActivityIndicator, Alert, Linking, SafeAreaView } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { api } from "@/services/api";
@@ -22,12 +22,16 @@ interface CommentHistoryProps {
 
 const ITEMS_PER_PAGE = 10;
 
-export default function CommentHistory({ visible = true, onClose, standalone = false, onlyRunning = false }: CommentHistoryProps) {
+export default forwardRef(function CommentHistory({ visible = true, onClose, standalone = false, onlyRunning = false }: CommentHistoryProps, ref) {
   const [commentHistory, setCommentHistory] = useState<CommentHistory[]>([]);
   const [loading, setLoading] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+
+  useImperativeHandle(ref, () => ({
+    fetchCommentHistory,
+  }));
 
   useEffect(() => {
     if (standalone || visible) {
@@ -39,7 +43,6 @@ export default function CommentHistory({ visible = true, onClose, standalone = f
     try {
       setLoading(true);
       let url = `/comments/history?page=${pageNum}&limit=${ITEMS_PER_PAGE}`;
-      // Nếu có prop onlyRunning thì chỉ lấy các item đang chạy
       if (onlyRunning) {
         url = `/comments/history?status=running&page=${pageNum}&limit=${ITEMS_PER_PAGE}`;
       }
@@ -176,7 +179,7 @@ export default function CommentHistory({ visible = true, onClose, standalone = f
       </SafeAreaView>
     </Modal>
   );
-}
+});
 
 const styles = StyleSheet.create({
   safeArea: {

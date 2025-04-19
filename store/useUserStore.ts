@@ -4,7 +4,7 @@ import { api } from "../services/api";
 import { ProfileResponse } from "@/services/userInterface";
 import * as WebBrowser from "expo-web-browser";
 import { useRouter } from "expo-router";
-const router = useRouter();
+// const router = useRouter();
 
 // Đăng ký WebBrowser.maybeCompleteAuthSession
 WebBrowser.maybeCompleteAuthSession();
@@ -30,9 +30,7 @@ interface UserState {
 }
 
 interface LoginResponse {
-  data: {
-    accessToken: string;
-  };
+  accessToken: string;
 }
 
 export const useUserStore = create<UserState>()(
@@ -80,17 +78,17 @@ export const useUserStore = create<UserState>()(
 
     signIn: async (email: string, password: string) => {
       const data = await api.post<LoginResponse>("/auth/login", { email, password });
-      await get().setAuthToken(data.data.accessToken);
+      await get().setAuthToken(data.accessToken);
       await get().validateToken();
-      return data.data.accessToken;
+      return data.accessToken;
     },
 
     signUp: async (email: string, password: string) => {
-      await api.post("/users", { email, password });
+      const res = await api.post("/users", { email, password });
     },
 
     signOut: async () => {
-      router.replace("/auth/login");
+      // router.replace("/auth/login");
       set({
         token: null,
         _id: null,
@@ -115,5 +113,5 @@ export const useUserStore = create<UserState>()(
         isAuthenticated: false,
       });
     },
-  })
+  }),
 );

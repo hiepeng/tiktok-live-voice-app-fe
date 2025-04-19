@@ -7,7 +7,6 @@ import { ToastRoot } from "../components/Toast";
 
 export default function RootLayout() {
   const router = useRouter();
-  const isAuthenticated = useUserStore(state => state.isAuthenticated);
   const validateToken = useUserStore(state => state.validateToken);
 
   useEffect(() => {
@@ -49,7 +48,7 @@ export default function RootLayout() {
     try {
       await AsyncStorage.setItem("token", token);
       const res = await validateToken();
-      if (isAuthenticated && res) {
+      if (res) {
         router.replace("/(tabs)");
       }
     } catch (error) {
