@@ -2,7 +2,9 @@
   "expo": {
     "name": "T Live Voice",
     "slug": "t-live-voice",
+    "owner": "hiepnvna",
     "version": "1.0.0",
+    "sdkVersion": "52.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo.png",
     "scheme": "tlivevoice",
@@ -49,33 +51,5 @@
       }
     },
     "newArchEnabled": true
-  },
-  "cli": {
-    "version": ">= 5.9.1"
-  },
-  "build": {
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal"
-    },
-    "preview": {
-      "distribution": "internal"
-    },
-    "production": {
-      "autoIncrement": true
-    }
-  },
-  "submit": {
-    "production": {
-      "android": {
-        "serviceAccountKeyPath": "./google-service-account.json",
-        "track": "production"
-      },
-      "ios": {
-        "appleId": "your-apple-id@example.com",
-        "ascAppId": "1234567890",
-        "appleTeamId": "ABCDEF1234"
-      }
-    }
   }
 }
