@@ -13,6 +13,10 @@ import {
 } from 'react-native-iap';
 import { api } from './api';
 import { SubscriptionType } from '@/interfaces/package.interface';
+import Constants from 'expo-constants';
+
+// Kiểm tra xem có đang chạy trong Expo Go không
+const isExpoGo = Constants.appOwnership === 'expo';
 
 // Định nghĩa ID sản phẩm cho từng nền tảng
 const SUBSCRIPTION_SKUS = {
@@ -78,9 +82,27 @@ function getSubscriptionSku(type: SubscriptionType, durationMonths: 1 | 6 | 12):
 class PaymentService {
   private purchaseUpdateSubscription: any;
   private purchaseErrorSubscription: any;
-  
+
+  // Get active packages from backend
+  async getActivePackages(): Promise<any[]> {
+    try {
+      const response: any = await api.get('/packages');
+      console.log(response, "1121")
+      return response;
+    } catch (error) {
+      console.error('Failed to fetch active packages', error);
+      throw error;
+    }
+  }
+
   // Khởi tạo kết nối với cửa hàng
-  async initializeIAP() {
+  async initializeIAP(): Promise<boolean> {
+    // Nếu đang chạy trong Expo Go, trả về true mà không khởi tạo IAP
+    if (isExpoGo) {
+      console.log('Running in Expo Go environment, skipping IAP initialization');
+      return true;
+    }
+    
     try {
       await initConnection();
       
@@ -90,7 +112,7 @@ class PaymentService {
         const receipt = purchase.transactionReceipt;
         if (receipt) {
           await this.verifyPurchaseWithBackend(purchase);
-          await finishTransaction(purchase);
+          await finishTransaction({ purchase });
         }
       });
       
@@ -107,7 +129,22 @@ class PaymentService {
   }
   
   // Lấy danh sách sản phẩm từ cửa hàng
-  async getAvailableSubscriptions() {
+  async getAvailableSubscriptions(): Promise<any[]> {
+    // Nếu đang chạy trong Expo Go, trả về mảng rỗng
+    if (isExpoGo) {
+      console.log('Running in Expo Go environment, returning mock subscriptions');
+      // Trả về dữ liệu giả để test UI
+      return [
+        {
+          productId: 'basic_monthly',
+          title: 'Basic Monthly (Test)',
+          description: 'Basic subscription for 1 month',
+          price: '9.99',
+          currency: 'USD'
+        }
+      ];
+    }
+    
     try {
       const platform = Platform.OS as 'ios' | 'android';
       const skus = [
@@ -125,7 +162,24 @@ class PaymentService {
   }
   
   // Thực hiện mua gói đăng ký
-  async purchaseSubscription(type: SubscriptionType, durationMonths: 1 | 6 | 12) {
+  async purchaseSubscription(type: SubscriptionType, durationMonths: 1 | 6 | 12): Promise<boolean> {
+    // Nếu đang chạy trong Expo Go, gọi trực tiếp API backend
+    if (isExpoGo) {
+      console.log('Running in Expo Go environment, calling backend API directly');
+      try {
+        // Gọi API backend trực tiếp để xử lý mua gói cước
+        const response: any = await api.post('/subscriptions/purchase', { 
+          type, 
+          durationMonths
+        });
+        console.log('Purchase response:', response.data);
+        return true;
+      } catch (error) {
+        console.error('Failed to purchase subscription via backend', error);
+        throw error; // Ném lỗi để UI có thể hiển thị thông báo lỗi
+      }
+    }
+    
     try {
       const sku = getSubscriptionSku(type, durationMonths);
       await requestPurchase({ sku });
@@ -137,7 +191,13 @@ class PaymentService {
   }
   
   // Khôi phục giao dịch (chủ yếu cho iOS)
-  async restorePurchases() {
+  async restorePurchases(): Promise<any[]> {
+    // Nếu đang chạy trong Expo Go, trả về mảng rỗng
+    if (isExpoGo) {
+      console.log('Running in Expo Go environment, simulating restore purchases');
+      return [];
+    }
+    
     try {
       const purchases = await getAvailablePurchases();
       
@@ -154,10 +214,10 @@ class PaymentService {
   }
   
   // Xác thực giao dịch với backend
-  private async verifyPurchaseWithBackend(purchase: ProductPurchase | SubscriptionPurchase) {
+  private async verifyPurchaseWithBackend(purchase: ProductPurchase | SubscriptionPurchase): Promise<any> {
     try {
       // Gửi thông tin giao dịch đến backend để xác thực
-      const response = await api.post('/subscriptions/verify-purchase', {
+      const response: any = await api.post('/subscriptions/verify-purchase', {
         productId: purchase.productId,
         transactionId: purchase.transactionId,
         transactionReceipt: purchase.transactionReceipt,
@@ -172,7 +232,7 @@ class PaymentService {
   }
   
   // Hủy đăng ký lắng nghe sự kiện
-  cleanup() {
+  cleanup(): void {
     if (this.purchaseUpdateSubscription) {
       this.purchaseUpdateSubscription.remove();
       this.purchaseUpdateSubscription = null;

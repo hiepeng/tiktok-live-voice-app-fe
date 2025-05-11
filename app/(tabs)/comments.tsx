@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
-import { StyleSheet, View, SafeAreaView, Text, FlatList, Image, Dimensions, TouchableOpacity } from "react-native";
+import { StyleSheet, View, Text, FlatList, Image, Dimensions, TouchableOpacity } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useCommentStore } from "@/store/useCommentStore";
 import { useTTSStore } from '@/store/useTTSStore';
 import { LinearGradient } from "expo-linear-gradient";
@@ -8,13 +9,14 @@ import Header from "../../components/Header";
 import OptionsModal from "@/components/comments/OptionsModal";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SettingsModal from "@/components/comments/SettingsModal";
+import type { NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 
 const { width } = Dimensions.get("window");
 
 const CommentsScreen = () => {
   const { comments, maxComments } = useCommentStore();
   const { speak, stop, isSpeaking, language, autoRead, toggleAutoRead } = useTTSStore();
-  const flatListRef = useRef(null);
+  const flatListRef = useRef<FlatList>(null);
   const [isAtEnd, setIsAtEnd] = useState(true);
   const [isLayoutComplete, setIsLayoutComplete] = useState(false);
   const [isAutoScrolling, setIsAutoScrolling] = useState(false);
@@ -24,7 +26,7 @@ const CommentsScreen = () => {
   const [pressedCommentId, setPressedCommentId] = useState<string | null>(null);
 
   // Kiểm tra vị trí cuộn
-  const handleScroll = event => {
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
     const paddingToBottom = 50;
     const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
@@ -36,7 +38,7 @@ const CommentsScreen = () => {
     if (isLayoutComplete) {
       setIsAutoScrolling(true);
       requestAnimationFrame(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
+        flatListRef.current && flatListRef.current.scrollToEnd({ animated: true });
         // Reset isAutoScrolling sau khi animation hoàn tất
         setTimeout(() => {
           setIsAutoScrolling(false);
@@ -86,14 +88,17 @@ const CommentsScreen = () => {
     setTimeout(() => setPressedCommentId(null), 200); // hiệu ứng bấm 200ms
   };
 
-  const renderComment = ({ item, index }) => (
+  const renderComment = ({ item, index }: { item: any; index: number }) => (
     <TouchableOpacity
       onPress={() => handleCommentPress(item)}
       activeOpacity={0.5}
       style={pressedCommentId === item.id ? { opacity: 0.6 } : undefined}
     >
       <LinearGradient
-        colors={index % 2 === 0 ? ["#f6f9fc", "#ffffff"] : ["#ffffff", "#f6f9fc"]}
+        colors={index % 2 === 0 ? ['#f6f9fc', '#ffffff'] : ['#ffffff', '#f6f9fc']}
+        locations={[0, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
         style={styles.commentContainer}
       >
         <View style={styles.avatarContainer}>
@@ -164,11 +169,6 @@ const CommentsScreen = () => {
             minIndexForVisible: 0,
             autoscrollToTopThreshold: 10,
           }}
-        />
-        <LinearGradient
-          colors={["rgba(255,255,255,1)", "rgba(255,255,255,0)"]}
-          style={styles.fadeGradient}
-          pointerEvents="none"
         />
       </View>
 

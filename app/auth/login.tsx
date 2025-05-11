@@ -16,13 +16,13 @@ const Login = () => {
   const router = useRouter();
   const signIn = useUserStore(state => state.signIn);
 
-  let redirectUri = AuthSession.makeRedirectUri({ scheme: "t-live-voice" });
+  let redirectUri = AuthSession.makeRedirectUri({ scheme: "tlivevoice" });
   // redirectUri = "https://auth.expo.io/@hiepnvna/t-live-voice"
   console.log(redirectUri, "redirectUri");
   const [request, response, promptAsync] = Google.useAuthRequest({
-    webClientId: "473141251729-bnclhtpr2uhoqp5j53l1huugvrt47pqq.apps.googleusercontent.com",
-    // androidClientId: "473141251729-370efdpnpgupns51b0sg39lnifvpgb8r.apps.googleusercontent.com",
-    androidClientId: "473141251729-bnclhtpr2uhoqp5j53l1huugvrt47pqq.apps.googleusercontent.com",
+    // webClientId: "473141251729-bnclhtpr2uhoqp5j53l1huugvrt47pqq.apps.googleusercontent.com",
+    androidClientId: "473141251729-370efdpnpgupns51b0sg39lnifvpgb8r.apps.googleusercontent.com",
+    // androidClientId: "473141251729-bnclhtpr2uhoqp5j53l1huugvrt47pqq.apps.googleusercontent.com",
     // iosClientId: "473141251729-lnvtfq5gbopk80grvhonf8d14d790s2h.apps.googleusercontent.com",
     redirectUri,
   });

@@ -4,7 +4,7 @@
     "slug": "t-live-voice",
     "owner": "hiepnvna",
     "version": "1.0.0",
-    "sdkVersion": "52.0.0",
+    "sdkVersion": "53.0.9",
     "orientation": "portrait",
     "icon": "./assets/images/logo.png",
     "scheme": "tlivevoice",
@@ -27,8 +27,7 @@
         "foregroundImage": "./assets/images/logo.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.hiepnvna.tlivevoice",
-      "versionCode": 1
+      "package": "com.hiepnvna.tlivevoice"
     },
     "web": {
       "bundler": "metro",
@@ -37,7 +36,13 @@
     },
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      [
+        "react-native-iap",
+        {
+          "paymentProvider": "both"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
