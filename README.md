@@ -7,3 +7,7 @@ eas build --platform android --profile preview
 eas build --platform android --profile preview --local
 
 eas build --platform android --profile production
+
+./gradlew --stop
+
+expo run:android

@@ -25,6 +25,7 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="tlivevoice"/>
+        <data android:scheme="com.hiepnvna.tlivevoice"/>
         <data android:scheme="exp+t-live-voice"/>
       </intent-filter>
     </activity>
