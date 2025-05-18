@@ -41,7 +41,6 @@ export const useCommentUrlStore = create<CommentUrlState>((set, get) => ({
 
   fetchActiveUrls: async () => {
     try {
-      console.log(1111)
       const response = await api.get<{ data: any[] }>("/comments/active");
       if (response && Array.isArray(response)) {
         const activeUrls = response.map(item => ({

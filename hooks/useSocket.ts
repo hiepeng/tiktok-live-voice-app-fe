@@ -24,7 +24,7 @@ export const useSocket = () => {
       });
 
       newSocket.on("connect", () => {
-        console.log("Socket connected with ID:", newSocket.id);
+        // console.log("Socket connected with ID:", newSocket.id);
         newSocket.emit("join-room", { userId: id });
       });
 

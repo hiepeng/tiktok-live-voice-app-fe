@@ -48,7 +48,6 @@ export const useUserStore = create<UserState>()(
 
       try {
         const res = await api.get<ProfileResponse>("/users/profile");
-        console.log(res, "res");
         if (res._id) {
           set({
             _id: res._id,

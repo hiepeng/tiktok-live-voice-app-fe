@@ -13,10 +13,6 @@ import {
 } from 'react-native-iap';
 import { api } from './api';
 import { SubscriptionType } from '@/interfaces/package.interface';
-import Constants from 'expo-constants';
-
-// Kiểm tra xem có đang chạy trong Expo Go không
-const isExpoGo = Constants.appOwnership === 'expo';
 
 // Định nghĩa ID sản phẩm cho từng nền tảng
 const SUBSCRIPTION_SKUS = {
@@ -97,17 +93,12 @@ class PaymentService {
 
   // Khởi tạo kết nối với cửa hàng
   async initializeIAP(): Promise<boolean> {
-    // Nếu đang chạy trong Expo Go, trả về true mà không khởi tạo IAP
-    if (isExpoGo) {
-      console.log('Running in Expo Go environment, skipping IAP initialization');
-      return true;
-    }
-    
     try {
       await initConnection();
       
       // Lắng nghe sự kiện mua hàng thành công
       this.purchaseUpdateSubscription = purchaseUpdatedListener(async (purchase) => {
+        console.log("purchaseUpdatedListener", purchase)
         // Xác thực giao dịch với backend
         const receipt = purchase.transactionReceipt;
         if (receipt) {
@@ -118,33 +109,19 @@ class PaymentService {
       
       // Lắng nghe sự kiện lỗi khi mua hàng
       this.purchaseErrorSubscription = purchaseErrorListener((error: PurchaseError) => {
+        console.log("purchaseErrorListener", error)
         console.error('Purchase error', error);
       });
       
       return true;
     } catch (error) {
-      console.error('Failed to initialize IAP', error);
+      console.error('Failed to initialize IAP 2', error);
       return false;
     }
   }
   
   // Lấy danh sách sản phẩm từ cửa hàng
   async getAvailableSubscriptions(): Promise<any[]> {
-    // Nếu đang chạy trong Expo Go, trả về mảng rỗng
-    if (isExpoGo) {
-      console.log('Running in Expo Go environment, returning mock subscriptions');
-      // Trả về dữ liệu giả để test UI
-      return [
-        {
-          productId: 'basic_monthly',
-          title: 'Basic Monthly (Test)',
-          description: 'Basic subscription for 1 month',
-          price: '9.99',
-          currency: 'USD'
-        }
-      ];
-    }
-    
     try {
       const platform = Platform.OS as 'ios' | 'android';
       const skus = [
@@ -163,26 +140,17 @@ class PaymentService {
   
   // Thực hiện mua gói đăng ký
   async purchaseSubscription(type: SubscriptionType, durationMonths: 1 | 6 | 12): Promise<boolean> {
-    // Nếu đang chạy trong Expo Go, gọi trực tiếp API backend
-    if (isExpoGo) {
-      console.log('Running in Expo Go environment, calling backend API directly');
-      try {
-        // Gọi API backend trực tiếp để xử lý mua gói cước
-        const response: any = await api.post('/subscriptions/purchase', { 
-          type, 
-          durationMonths
-        });
-        console.log('Purchase response:', response.data);
-        return true;
-      } catch (error) {
-        console.error('Failed to purchase subscription via backend', error);
-        throw error; // Ném lỗi để UI có thể hiển thị thông báo lỗi
-      }
-    }
-    
     try {
       const sku = getSubscriptionSku(type, durationMonths);
-      await requestPurchase({ sku });
+    console.log("sku", sku)
+    
+    // Handle platform-specific purchase parameters
+    const params = Platform.select({
+      android: { skus: [sku] },
+      ios: { sku }
+    }) as { skus: string[] } | { sku: string };
+    
+    await requestPurchase(params as Parameters<typeof requestPurchase>[0]);
       return true;
     } catch (error) {
       console.error('Failed to purchase subscription', error);
@@ -192,12 +160,6 @@ class PaymentService {
   
   // Khôi phục giao dịch (chủ yếu cho iOS)
   async restorePurchases(): Promise<any[]> {
-    // Nếu đang chạy trong Expo Go, trả về mảng rỗng
-    if (isExpoGo) {
-      console.log('Running in Expo Go environment, simulating restore purchases');
-      return [];
-    }
-    
     try {
       const purchases = await getAvailablePurchases();
       

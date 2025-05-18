@@ -45,7 +45,7 @@ export default function PackagesScreen() {
       const initialized = await PaymentService.initializeIAP();
       setIapInitialized(initialized);
     } catch (error) {
-      console.error('Failed to initialize IAP', error);
+      console.error('Failed to initialize IAP 1', error);
     }
   };
 
