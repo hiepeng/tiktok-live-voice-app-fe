@@ -9,11 +9,10 @@
       "distribution": "internal",
       "releaseChannel": "development",
       "android": {
-        "buildType": "apk"
+        "buildType": "app-bundle"
       },
-      "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.example.com"
-      },
+      "autoIncrement": true,
+      "env": {},
       "cache": {
         "disabled": false
       }
@@ -21,12 +20,13 @@
     "preview": {
       "distribution": "internal",
       "android": {
-        "buildType": "apk"
-      }
+        "buildType": "app-bundle"
+      },
+      "autoIncrement": true
     },
     "production": {
       "android": {
-        "buildType": "apk"
+        "buildType": "app-bundle"
       },
       "autoIncrement": true
     }

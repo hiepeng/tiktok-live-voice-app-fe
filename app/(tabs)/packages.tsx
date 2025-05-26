@@ -89,6 +89,13 @@ export default function PackagesScreen() {
           onPress: async () => {
             try {
               if (iapInitialized) {
+                // Fetch available subscriptions first
+                const availableSubscriptions = await PaymentService.getAvailableSubscriptions();
+                console.log("availableSubscriptions", availableSubscriptions)
+                if (!availableSubscriptions || availableSubscriptions.length === 0) {
+                  throw new Error('No subscriptions available');
+                }
+                
                 // Sử dụng thanh toán trong ứng dụng
                 await PaymentService.purchaseSubscription(pkg.type, duration);
               } else {
@@ -118,6 +125,8 @@ export default function PackagesScreen() {
                   errorMessage = 'Invalid package selected';
                 } else if (error.message.includes('already_subscribed')) {
                   errorMessage = 'You already have an active subscription';
+                } else if (error.message.includes('No subscriptions available')) {
+                  errorMessage = 'Unable to fetch available subscriptions. Please try again later.';
                 }
               }
 

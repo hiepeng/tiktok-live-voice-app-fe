@@ -129,8 +129,9 @@ class PaymentService {
         ...Object.values(SUBSCRIPTION_SKUS[platform].standard),
         ...Object.values(SUBSCRIPTION_SKUS[platform].premium)
       ];
-      
+      console.log("skus", skus)
       const products = await getProducts({ skus });
+      console.log("products", products)
       return products;
     } catch (error) {
       console.error('Failed to get products', error);

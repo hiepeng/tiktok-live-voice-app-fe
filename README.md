@@ -14,4 +14,5 @@ open -a "Android Studio"
 
 expo run:android
 
+eas submit --platform android
 
