@@ -93,19 +93,13 @@ productFlavors {
     dimension "appstore"
     missingDimensionStrategy "store", "play"
   }
-
-  amazon {
-    dimension "appstore"
-    missingDimensionStrategy "store", "amazon"
-  }
 }
     namespace 'com.hiepnvna.tlivevoice'
     defaultConfig {
-        manifestPlaceholders = [appAuthRedirectScheme: 'tlivevoice']
         applicationId 'com.hiepnvna.tlivevoice'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        versionCode 19
         versionName "1.0.0"
     }
     signingConfigs {

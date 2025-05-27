@@ -1,10 +1,9 @@
-import React, { useState } from "react";
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
+import React, { useEffect, useState } from "react";
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, Platform } from "react-native";
 import { useUserStore } from "../../store/useUserStore";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import * as AuthSession from "expo-auth-session";
-import * as Google from "expo-auth-session/providers/google";
+import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
 import { api } from "@/services/api";
 
 const Login = () => {
@@ -15,17 +14,6 @@ const Login = () => {
   const setAuthToken = useUserStore(state => state.setAuthToken);
   const router = useRouter();
   const signIn = useUserStore(state => state.signIn);
-
-  let redirectUri = AuthSession.makeRedirectUri({ scheme: "tlivevoice" });
-  // redirectUri = "https://auth.expo.io/@hiepnvna/t-live-voice"
-  console.log(redirectUri, "redirectUri");
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    // webClientId: "473141251729-bnclhtpr2uhoqp5j53l1huugvrt47pqq.apps.googleusercontent.com",
-    androidClientId: "473141251729-370efdpnpgupns51b0sg39lnifvpgb8r.apps.googleusercontent.com",
-    // androidClientId: "473141251729-bnclhtpr2uhoqp5j53l1huugvrt47pqq.apps.googleusercontent.com",
-    // iosClientId: "473141251729-lnvtfq5gbopk80grvhonf8d14d790s2h.apps.googleusercontent.com",
-    redirectUri,
-  });
 
   const handleLogin = async () => {
     try {
@@ -40,27 +28,52 @@ const Login = () => {
     }
   };
 
-  const signInWithGoogle = async () => {
+  const handleGoogleSignIn = async () => {
     setIsLoading(true);
-
     try {
-      const res: any = await promptAsync();
-      const accessToken = res?.authentication?.accessToken;
-      if (!accessToken) throw new Error("Không lấy được access token từ Google");
-
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      console.log('Google Sign-In Success:', userInfo);
       const response = await api.post<{ accessToken: string }>("/auth/google", {
-        token: accessToken,
+        token: userInfo.data?.idToken,
       });
+      console.log(response, "response");
       const jwt = response.accessToken;
       await setAuthToken(jwt);
       const valid = await validateToken();
       if (valid) router.replace("/(tabs)");
-    } catch (error) {
-      Alert.alert("Error", error instanceof Error ? error.message : "Login with Google failed");
+      
+      // Here you would typically send the userInfo to your backend
+      // to authenticate the user and get your app's JWT token
+      
+      // For now, we'll just show the user info
+      Alert.alert('Success', 'Google Sign-In successful!');
+      
+    } catch (error: any) {
+      console.log('Google Sign-In Error:', error);
+      
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        Alert.alert('Cancelled', 'User cancelled the login flow');
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        Alert.alert('In Progress', 'Sign in is in progress already');
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        Alert.alert('Error', 'Play services not available or outdated');
+      } else {
+        Alert.alert(
+          'Configuration Error',
+          'Vui lòng kiểm tra cấu hình Google Cloud Console và đảm bảo các Client ID đã được cấu hình đúng.'
+        );
+      }
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    GoogleSignin.configure({
+      webClientId: "473141251729-bnclhtpr2uhoqp5j53l1huugvrt47pqq.apps.googleusercontent.com",
+    });
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -90,7 +103,7 @@ const Login = () => {
         <View style={styles.dividerLine} />
       </View>
 
-      <TouchableOpacity style={styles.googleButton} onPress={signInWithGoogle} disabled={isLoading}>
+      <TouchableOpacity style={styles.googleButton} onPress={handleGoogleSignIn} disabled={isLoading}>
         <Ionicons name="logo-google" size={20} color="#4285F4" style={styles.googleIcon} />
         <Text style={styles.googleButtonText}>Sign in with Google</Text>
       </TouchableOpacity>

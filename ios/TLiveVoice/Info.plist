@@ -38,13 +38,9 @@
         </array>
       </dict>
       <dict>
-        <key>CFBundleTypeRole</key>
-        <string>Editor</string>
-        <key>CFBundleURLName</key>
-        <string>OAuthRedirect</string>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>com.hiepnvna.tlivevoice</string>
+          <string>com.googleusercontent.apps._some_id_here_</string>
         </array>
       </dict>
     </array>

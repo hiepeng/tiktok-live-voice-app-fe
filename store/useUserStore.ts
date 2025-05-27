@@ -2,12 +2,6 @@ import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { api } from "../services/api";
 import { ProfileResponse } from "@/services/userInterface";
-import * as WebBrowser from "expo-web-browser";
-import { useRouter } from "expo-router";
-// const router = useRouter();
-
-// Đăng ký WebBrowser.maybeCompleteAuthSession
-WebBrowser.maybeCompleteAuthSession();
 
 interface UserState {
   token: string | null;
@@ -34,7 +28,6 @@ interface LoginResponse {
 }
 
 export const useUserStore = create<UserState>()(
-  // Bỏ persist để không tự động đồng bộ token vào storage
   (set, get) => ({
     token: null,
     _id: null,

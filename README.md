@@ -1,4 +1,5 @@
 eas build --platform android --profile development
+
 fe $ npx expo prebuild --clean
 npx expo prebuild --clean --platform android
 eas build --platform android --profile development --local
@@ -13,6 +14,12 @@ open -a "Android Studio"
 ./gradlew --stop
 
 expo run:android
+npx expo run:android
+npx expo run:android --variant=googlePlayDebug
+
+cd fe/android
+./gradlew assembleGooglePlayDebug
 
 eas submit --platform android
+
 
