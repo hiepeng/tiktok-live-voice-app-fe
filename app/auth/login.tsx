@@ -42,16 +42,9 @@ const Login = () => {
       await setAuthToken(jwt);
       const valid = await validateToken();
       if (valid) router.replace("/(tabs)");
-      
-      // Here you would typically send the userInfo to your backend
-      // to authenticate the user and get your app's JWT token
-      
-      // For now, we'll just show the user info
-      Alert.alert('Success', 'Google Sign-In successful!');
-      
     } catch (error: any) {
       console.log('Google Sign-In Error:', error);
-      
+      Alert.alert('Error', JSON.stringify(error));
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
         Alert.alert('Cancelled', 'User cancelled the login flow');
       } else if (error.code === statusCodes.IN_PROGRESS) {
