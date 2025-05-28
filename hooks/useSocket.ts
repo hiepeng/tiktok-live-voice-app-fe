@@ -9,34 +9,45 @@ const SOCKET_URL = BACKEND_URL.replace('/api/v1', '');
 export const useSocket = () => {
   const socketRef = useRef<Socket | null>(null);
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const initSocket = async () => {
       const id = await getUserIdLocalStore();
-      if (!id) return;
+      if (!id) {
+        // If no user ID, disconnect existing socket if any
+        if (socketRef.current) {
+          socketRef.current.disconnect();
+          socketRef.current = null;
+          setSocket(null);
+        }
+        return;
+      }
       
-      setUserId(id);
-      
-      const newSocket = io(SOCKET_URL, {
-        transports: ["websocket"],
-        path: "/socket.io/", // explicitly set the socket.io path
-      });
+      // Only create new socket if we don't have one
+      if (!socketRef.current) {
+        const newSocket = io(SOCKET_URL, {
+          transports: ["websocket"],
+          path: "/socket.io/",
+        });
 
-      newSocket.on("connect", () => {
-        // console.log("Socket connected with ID:", newSocket.id);
-        newSocket.emit("join-room", { userId: id });
-      });
+        newSocket.on("connect", () => {
+          newSocket.emit("join-room", { userId: id });
+        });
 
-      newSocket.on("connect_error", (error) => {
-        console.error("Socket connection error:", error);
-      });
+        newSocket.on("connect_error", (error) => {
+          console.error("Socket connection error:", error);
+        });
 
-      socketRef.current = newSocket;
-      setSocket(newSocket);
+        socketRef.current = newSocket;
+        setSocket(newSocket);
+      }
 
       return () => {
-        newSocket.disconnect();
+        if (socketRef.current) {
+          socketRef.current.disconnect();
+          socketRef.current = null;
+          setSocket(null);
+        }
       };
     };
 

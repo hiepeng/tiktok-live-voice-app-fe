@@ -1,15 +1,7 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  SafeAreaView,
-  ActivityIndicator,
-  Alert,
-  Linking,
-} from "react-native";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert, Linking } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import Header from "@/components/Header";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useSubscriptionStore } from "@/store/useSubscriptionStore";
@@ -26,26 +18,26 @@ export default function PackagesScreen() {
     purchaseSubscription,
     fetchPackages,
   } = useSubscriptionStore();
-  
+
   const [iapInitialized, setIapInitialized] = useState(false);
 
   useEffect(() => {
     fetchCurrentSubscription();
     fetchPackages();
     initializeIAP();
-    
+
     // Cleanup khi component unmount
     return () => {
       PaymentService.cleanup();
     };
   }, []);
-  
+
   const initializeIAP = async () => {
     try {
       const initialized = await PaymentService.initializeIAP();
       setIapInitialized(initialized);
     } catch (error) {
-      console.error('Failed to initialize IAP 1', error);
+      console.error("Failed to initialize IAP 1", error);
     }
   };
 
@@ -91,68 +83,64 @@ export default function PackagesScreen() {
               if (iapInitialized) {
                 // Fetch available subscriptions first
                 const availableSubscriptions = await PaymentService.getAvailableSubscriptions();
-                console.log("availableSubscriptions", availableSubscriptions)
+                console.log("availableSubscriptions", availableSubscriptions);
                 if (!availableSubscriptions || availableSubscriptions.length === 0) {
-                  throw new Error('No subscriptions available');
+                  throw new Error("No subscriptions available");
                 }
-                
+
                 // Sử dụng thanh toán trong ứng dụng
                 await PaymentService.purchaseSubscription(pkg.type, duration);
               } else {
                 // Sử dụng thanh toán hiện tại nếu IAP chưa được khởi tạo
                 await purchaseSubscription(pkg.type, duration);
               }
-              
-              Alert.alert(
-                "Success",
-                "Subscription updated successfully!",
-                [
-                  {
-                    text: "OK",
-                    onPress: () => {
-                      fetchCurrentSubscription();
-                    }
-                  }
-                ]
-              );
+
+              Alert.alert("Success", "Subscription updated successfully!", [
+                {
+                  text: "OK",
+                  onPress: () => {
+                    fetchCurrentSubscription();
+                  },
+                },
+              ]);
             } catch (error) {
-              let errorMessage = 'Failed to purchase subscription';
-              
+              let errorMessage = "Failed to purchase subscription";
+
               if (error instanceof Error) {
-                if (error.message.includes('insufficient_funds')) {
-                  errorMessage = 'Insufficient funds';
-                } else if (error.message.includes('invalid_package')) {
-                  errorMessage = 'Invalid package selected';
-                } else if (error.message.includes('already_subscribed')) {
-                  errorMessage = 'You already have an active subscription';
-                } else if (error.message.includes('No subscriptions available')) {
-                  errorMessage = 'Unable to fetch available subscriptions. Please try again later.';
+                if (error.message.includes("insufficient_funds")) {
+                  errorMessage = "Insufficient funds";
+                } else if (error.message.includes("invalid_package")) {
+                  errorMessage = "Invalid package selected";
+                } else if (error.message.includes("already_subscribed")) {
+                  errorMessage = "You already have an active subscription";
+                } else if (error.message.includes("No subscriptions available")) {
+                  errorMessage = "Unable to fetch available subscriptions. Please try again later.";
                 }
               }
 
-              Alert.alert('Error', errorMessage);
-              console.error('Purchase error:', error);
+              Alert.alert("Error", errorMessage);
+              console.error("Purchase error:", error);
             }
           },
         },
       ],
     );
   };
-  
+
   // Thêm nút khôi phục giao dịch (chủ yếu cho iOS)
   const handleRestorePurchases = async () => {
     try {
       if (!iapInitialized) {
-        Alert.alert('Error', 'Payment service not initialized');
+        Alert.alert("Error", "Payment service not initialized");
         return;
       }
-      
+
       await PaymentService.restorePurchases();
       fetchCurrentSubscription();
-      Alert.alert('Success', 'Purchases restored successfully');
+      Alert.alert("Success", "Purchases restored successfully");
     } catch (error) {
-      Alert.alert('Error', 'Failed to restore purchases');
-      console.error('Restore error:', error);
+      Alert.alert("Error", "Failed to restore purchases");
+      console.error("Restore error:", error);
     }
   };
 
@@ -188,8 +176,8 @@ export default function PackagesScreen() {
         <View style={styles.currentPackageHeader}>
           <Text style={styles.currentPackageTitle}>Current Package</Text>
           {currentSubscription.type !== SubscriptionType.FREE && (
-            <View style={[styles.statusBadge, { backgroundColor:  "#4CAF50"  }]}>
-              <Text style={styles.statusText}>{ "Active" }</Text>
+            <View style={[styles.statusBadge, { backgroundColor: "#4CAF50" }]}>
+              <Text style={styles.statusText}>{"Active"}</Text>
             </View>
           )}
         </View>
@@ -197,16 +185,14 @@ export default function PackagesScreen() {
         <View style={styles.currentPackageContent}>
           <Text style={styles.packageName}>{currentSubscription.name}</Text>
           {currentSubscription.type !== SubscriptionType.FREE && currentSubscription.endDate && (
-            <Text style={styles.expiryDate}>
-              Expires: {currentSubscription.endDate.toLocaleDateString()}
-            </Text>
+            <Text style={styles.expiryDate}>Expires: {currentSubscription.endDate.toLocaleDateString()}</Text>
           )}
           <View style={styles.featuresContainer}>
             <View style={styles.featureItem}>
               <MaterialIcons name="check-circle" size={20} color="#4CAF50" />
               <Text style={styles.featureText}>
-                {currentSubscription.maxDuration === -1 
-                  ? "Unlimited stream duration" 
+                {currentSubscription.maxDuration === -1
+                  ? "Unlimited stream duration"
                   : `${currentSubscription.maxDuration} minutes per stream`}
               </Text>
             </View>
@@ -247,7 +233,7 @@ export default function PackagesScreen() {
     );
   };
 
-  const renderPackage = ({ item, index }: { item: Package, index: number }) => (
+  const renderPackage = ({ item, index }: { item: Package; index: number }) => (
     <View style={styles.packageCard}>
       <Text style={styles.packageName}>{item.name}</Text>
       {renderPackagePrice(item)}
@@ -316,10 +302,10 @@ export default function PackagesScreen() {
           },
         ]}
         renderItem={({ item, index }) => renderPackage({ item, index })}
-        keyExtractor={(item) => item._id.toString()}
+        keyExtractor={item => item._id.toString()}
         contentContainerStyle={[styles.listContainer, { paddingTop: 24 }]}
       />
-      
+
       {/* Thêm nút khôi phục giao dịch */}
       {/* <TouchableOpacity 
         style={styles.restoreButton} 
@@ -459,16 +445,16 @@ const styles = StyleSheet.create({
   },
   subscriptionDetails: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     marginTop: 4,
   },
   restoreButton: {
     padding: 10,
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 20,
   },
   restoreButtonText: {
-    color: '#0a7ea4',
+    color: "#0a7ea4",
     fontSize: 16,
   },
 });

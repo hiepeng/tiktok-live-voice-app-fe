@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, SafeAreaView, Text, TextInput, TouchableOpacity, Alert, ScrollView } from "react-native";
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, ScrollView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useSocket } from "../../hooks/useSocket";
 import { useCommentStore } from "@/store/useCommentStore";
 import { useCommentUrlStore } from "@/store/useCommentUrlStore";

@@ -31,6 +31,19 @@ class ApiService {
       ...restConfig,
       headers,
     };
+
+    const generateCurlCommand = (url: string, options: RequestInit) => {
+      const headers = options.headers ? Object.entries(options.headers)
+        .map(([key, value]) => `-H '${key}: ${value}'`)
+        .join(' ') : '';
+      
+      const method = options.method || 'GET';
+      const body = options.body ? `-d '${options.body}'` : '';
+      
+      return `curl -X ${method} ${headers} ${body} '${url}'`;
+    };
+
+    // console.log('CURL Command:', generateCurlCommand(url, options));
     const response = await fetch(url, options);
     const data = await response.json();
 

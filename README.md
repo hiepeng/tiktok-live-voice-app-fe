@@ -19,7 +19,9 @@ npx expo run:android --variant=googlePlayDebug
 
 cd fe/android
 ./gradlew assembleGooglePlayDebug
-
+./gradlew assembleDebug
+./gradlew assemblePreview
+./gradlew assembleRelease
 eas submit --platform android
 
 

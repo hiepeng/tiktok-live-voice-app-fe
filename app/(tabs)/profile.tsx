@@ -1,5 +1,5 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { View, Text, StyleSheet, Pressable, Image, SafeAreaView } from "react-native";
+import { View, Text, StyleSheet, Pressable, Image } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useUserStore } from "../../store/useUserStore";
 import { MaterialIcons } from "@expo/vector-icons";

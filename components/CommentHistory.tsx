@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useImperativeHandle, forwardRef } from "react";
-import { View, Text, StyleSheet, Pressable, Modal, FlatList, ActivityIndicator, Alert, Linking, SafeAreaView } from "react-native";
+import { View, Text, StyleSheet, Pressable, Modal, FlatList, ActivityIndicator, Alert, Linking } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { api } from "@/services/api";
 import Header from "./Header";
