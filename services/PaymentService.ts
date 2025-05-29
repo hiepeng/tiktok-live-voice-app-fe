@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import { 
   initConnection, 
-  getProducts, 
+  getProducts,
   requestPurchase,
   finishTransaction,
   purchaseUpdatedListener,
@@ -9,7 +9,8 @@ import {
   getAvailablePurchases,
   ProductPurchase,
   SubscriptionPurchase,
-  PurchaseError
+  PurchaseError,
+  endConnection
 } from 'react-native-iap';
 import { api } from './api';
 import { SubscriptionType } from '@/interfaces/package.interface';
@@ -78,6 +79,7 @@ function getSubscriptionSku(type: SubscriptionType, durationMonths: 1 | 6 | 12):
 class PaymentService {
   private purchaseUpdateSubscription: any;
   private purchaseErrorSubscription: any;
+  private isInitialized: boolean = false;
 
   // Get active packages from backend
   async getActivePackages(): Promise<any[]> {
@@ -94,6 +96,11 @@ class PaymentService {
   // Khởi tạo kết nối với cửa hàng
   async initializeIAP(): Promise<boolean> {
     try {
+      if (this.isInitialized) {
+        return true;
+      }
+
+      // Kết nối với IAP
       await initConnection();
       
       // Lắng nghe sự kiện mua hàng thành công
@@ -113,9 +120,10 @@ class PaymentService {
         console.error('Purchase error', error);
       });
       
+      this.isInitialized = true;
       return true;
     } catch (error) {
-      console.error('Failed to initialize IAP 2', error);
+      console.error('Failed to initialize IAP', error);
       return false;
     }
   }
@@ -123,18 +131,35 @@ class PaymentService {
   // Lấy danh sách sản phẩm từ cửa hàng
   async getAvailableSubscriptions(): Promise<any[]> {
     try {
+      if (!this.isInitialized) {
+        console.log("Initializing IAP...");
+        await this.initializeIAP();
+      }
+
       const platform = Platform.OS as 'ios' | 'android';
+      console.log("Current platform:", platform);
+      
       const skus = [
         ...Object.values(SUBSCRIPTION_SKUS[platform].basic),
         ...Object.values(SUBSCRIPTION_SKUS[platform].standard),
         ...Object.values(SUBSCRIPTION_SKUS[platform].premium)
       ];
-      console.log("skus", skus)
+      console.log("Requesting products with SKUs:", skus);
+      
       const products = await getProducts({ skus });
-      console.log("products", products)
+      console.log("Received products:", JSON.stringify(products, null, 2));
+      
+      if (products.length === 0) {
+        console.warn("No products returned. Please check:");
+        console.warn("1. Products are created in Google Play Console");
+        console.warn("2. App is uploaded to Google Play Console");
+        console.warn("3. Test account is added to License Testing");
+        console.warn("4. Device is logged in with test account");
+      }
+      
       return products;
     } catch (error) {
-      console.error('Failed to get products', error);
+      console.error('Failed to get products:', error);
       return [];
     }
   }
@@ -142,16 +167,20 @@ class PaymentService {
   // Thực hiện mua gói đăng ký
   async purchaseSubscription(type: SubscriptionType, durationMonths: 1 | 6 | 12): Promise<boolean> {
     try {
+      if (!this.isInitialized) {
+        await this.initializeIAP();
+      }
+
       const sku = getSubscriptionSku(type, durationMonths);
-    console.log("sku", sku)
+      console.log("sku", sku)
     
-    // Handle platform-specific purchase parameters
-    const params = Platform.select({
-      android: { skus: [sku] },
-      ios: { sku }
-    }) as { skus: string[] } | { sku: string };
+      // Handle platform-specific purchase parameters
+      const params = Platform.select({
+        android: { skus: [sku] },
+        ios: { sku }
+      }) as { skus: string[] } | { sku: string };
     
-    await requestPurchase(params as Parameters<typeof requestPurchase>[0]);
+      await requestPurchase(params as Parameters<typeof requestPurchase>[0]);
       return true;
     } catch (error) {
       console.error('Failed to purchase subscription', error);
@@ -162,6 +191,10 @@ class PaymentService {
   // Khôi phục giao dịch (chủ yếu cho iOS)
   async restorePurchases(): Promise<any[]> {
     try {
+      if (!this.isInitialized) {
+        await this.initializeIAP();
+      }
+
       const purchases = await getAvailablePurchases();
       
       // Xác thực các giao dịch đã mua với backend
@@ -195,7 +228,7 @@ class PaymentService {
   }
   
   // Hủy đăng ký lắng nghe sự kiện
-  cleanup(): void {
+  async cleanup(): Promise<void> {
     if (this.purchaseUpdateSubscription) {
       this.purchaseUpdateSubscription.remove();
       this.purchaseUpdateSubscription = null;
@@ -204,6 +237,11 @@ class PaymentService {
     if (this.purchaseErrorSubscription) {
       this.purchaseErrorSubscription.remove();
       this.purchaseErrorSubscription = null;
+    }
+
+    if (this.isInitialized) {
+      await endConnection();
+      this.isInitialized = false;
     }
   }
 }
