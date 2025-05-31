@@ -80,7 +80,6 @@ export const useUserStore = create<UserState>()(
     },
 
     signOut: async () => {
-      // router.replace("/auth/login");
       set({
         token: null,
         _id: null,

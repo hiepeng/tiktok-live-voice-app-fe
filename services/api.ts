@@ -43,7 +43,7 @@ class ApiService {
       return `curl -X ${method} ${headers} ${body} '${url}'`;
     };
 
-    // console.log('CURL Command:', generateCurlCommand(url, options));
+    console.log('CURL Command:', generateCurlCommand(url, options));
     const response = await fetch(url, options);
     const data = await response.json();
 

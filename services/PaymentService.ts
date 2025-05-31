@@ -105,7 +105,7 @@ class PaymentService {
       
       // Lắng nghe sự kiện mua hàng thành công
       this.purchaseUpdateSubscription = purchaseUpdatedListener(async (purchase) => {
-        console.log("purchaseUpdatedListener", purchase)
+        // console.log("purchaseUpdatedListener", purchase)
         // Xác thực giao dịch với backend
         const receipt = purchase.transactionReceipt;
         if (receipt) {
@@ -164,6 +164,24 @@ class PaymentService {
     }
   }
   
+  // Kiểm tra và xử lý tài khoản Google Play
+  async checkGooglePlayAccount(): Promise<void> {
+    if (Platform.OS === 'android') {
+      try {
+        const purchases = await getAvailablePurchases();
+        console.log('Current Google Play purchases:', purchases);
+        
+        if (purchases.length > 0) {
+          // Hiển thị thông báo cho người dùng
+          throw new Error('Tài khoản Google Play hiện tại đã có giao dịch. Vui lòng đăng xuất tài khoản Google Play và đăng nhập tài khoản khác, hoặc xóa dữ liệu ứng dụng trên Google Play Store.');
+        }
+      } catch (error) {
+        console.error('Error checking Google Play account:', error);
+        throw error;
+      }
+    }
+  }
+
   // Thực hiện mua gói đăng ký
   async purchaseSubscription(type: SubscriptionType, durationMonths: 1 | 6 | 12): Promise<boolean> {
     try {
@@ -171,8 +189,11 @@ class PaymentService {
         await this.initializeIAP();
       }
 
+      // Kiểm tra tài khoản Google Play trước
+      // await this.checkGooglePlayAccount();
+
       const sku = getSubscriptionSku(type, durationMonths);
-      console.log("sku", sku)
+      console.log("Attempting to purchase SKU:", sku);
     
       // Handle platform-specific purchase parameters
       const params = Platform.select({
@@ -182,7 +203,7 @@ class PaymentService {
     
       await requestPurchase(params as Parameters<typeof requestPurchase>[0]);
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to purchase subscription', error);
       throw error;
     }
@@ -211,6 +232,7 @@ class PaymentService {
   
   // Xác thực giao dịch với backend
   private async verifyPurchaseWithBackend(purchase: ProductPurchase | SubscriptionPurchase): Promise<any> {
+    // console.log("purchase", purchase)
     try {
       // Gửi thông tin giao dịch đến backend để xác thực
       const response: any = await api.post('/subscriptions/verify-purchase', {
@@ -243,6 +265,17 @@ class PaymentService {
       await endConnection();
       this.isInitialized = false;
     }
+  }
+
+  // Reset IAP state when user logs out
+  async resetIAPState(): Promise<void> {
+    await this.cleanup();
+  }
+
+  // Reinitialize IAP when user logs in
+  async reinitializeIAP(): Promise<void> {
+    await this.cleanup();
+    await this.initializeIAP();
   }
 }
 

@@ -15,7 +15,6 @@ export default function PackagesScreen() {
     isLoading,
     error,
     fetchCurrentSubscription,
-    purchaseSubscription,
     fetchPackages,
   } = useSubscriptionStore();
 
@@ -89,9 +88,6 @@ export default function PackagesScreen() {
 
                 // Sử dụng thanh toán trong ứng dụng
                 await PaymentService.purchaseSubscription(pkg.type, duration);
-              } else {
-                // Sử dụng thanh toán hiện tại nếu IAP chưa được khởi tạo
-                await purchaseSubscription(pkg.type, duration);
               }
 
               Alert.alert("Success", "Subscription updated successfully!", [
