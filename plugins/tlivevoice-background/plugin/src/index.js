@@ -46,6 +46,7 @@ const withTLiveVoiceBackground = (config) => {
       { $: { 'android:name': 'android.permission.FOREGROUND_SERVICE' } },
       { $: { 'android:name': 'android.permission.WAKE_LOCK' } },
       { $: { 'android:name': 'android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS' } },
+      { $: { 'android:name': 'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK' } },
     ];
     for (const perm of requiredPermissions) {
       if (!permissions.some((p) => p.$['android:name'] === perm.$['android:name'])) {
@@ -67,8 +68,16 @@ const withTLiveVoiceBackground = (config) => {
             'android:name': '.BackgroundService',
             'android:enabled': 'true',
             'android:exported': 'false',
-            'android:foregroundServiceType': 'dataSync',
+            'android:foregroundServiceType': 'mediaPlayback',
           },
+        });
+      } else {
+        // Nếu đã có service, patch thêm foregroundServiceType nếu thiếu
+        app.service = app.service.map((svc) => {
+          if (svc['$']['android:name'] === '.BackgroundService') {
+            svc['$']['android:foregroundServiceType'] = 'mediaPlayback';
+          }
+          return svc;
         });
       }
     }
