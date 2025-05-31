@@ -1,0 +1,5 @@
+{
+  "name": "tlivevoice-background",
+  "version": "1.0.0",
+  "main": "plugin/src/index.ts"
+} 
