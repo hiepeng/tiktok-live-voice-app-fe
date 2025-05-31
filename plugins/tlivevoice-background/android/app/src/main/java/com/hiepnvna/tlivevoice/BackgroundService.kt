@@ -27,11 +27,9 @@ class BackgroundService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (!isServiceRunning) {
-            val notification = createNotification()
-            startForeground(NOTIFICATION_ID, notification)
-            isServiceRunning = true
-        }
+        val notification = createNotification()
+        startForeground(NOTIFICATION_ID, notification)
+        isServiceRunning = true
         return START_STICKY
     }
 
