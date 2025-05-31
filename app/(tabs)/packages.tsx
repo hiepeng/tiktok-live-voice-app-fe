@@ -24,6 +24,7 @@ export default function PackagesScreen() {
     fetchCurrentSubscription();
     fetchPackages();
     initializeIAP();
+    PaymentService.getAvailableSubscriptions();
 
     // Cleanup khi component unmount
     return () => {
@@ -49,15 +50,15 @@ export default function PackagesScreen() {
     Alert.alert("Select Duration", "Choose your subscription period:", [
       {
         text: "1 Month",
-        onPress: () => confirmPurchase(pkg, 1, pkg.price),
+        onPress: () => confirmPurchase(pkg, 1),
       },
       {
         text: "6 Months (10% off)",
-        onPress: () => confirmPurchase(pkg, 6, pkg.price * 6 * 0.9),
+        onPress: () => confirmPurchase(pkg, 6),
       },
       {
         text: "12 Months (20% off)",
-        onPress: () => confirmPurchase(pkg, 12, pkg.price * 12 * 0.8),
+        onPress: () => confirmPurchase(pkg, 12),
       },
       {
         text: "Cancel",
@@ -66,31 +67,35 @@ export default function PackagesScreen() {
     ]);
   };
 
-  const confirmPurchase = async (pkg: Package, duration: 1 | 6 | 12, totalPrice: number) => {
+  const confirmPurchase = async (pkg: Package, duration: 1 | 6 | 12) => {
+    const price = pkg.price * duration * (duration === 1 ? 1 : duration === 6 ? 0.9 : 0.8);
+    
     Alert.alert(
-      "Confirm Purchase",
-      `Subscribe to ${pkg.name} for ${duration} ${duration === 1 ? "month" : "months"}?\n\nTotal: $${totalPrice.toFixed(2)}`,
+      "Confirm Subscription",
+      `Subscribe to ${pkg.name} for ${duration} ${duration === 1 ? "month" : "months"}?\n\nTotal: $${price.toFixed(2)}`,
       [
         {
           text: "Cancel",
           style: "cancel",
         },
         {
-          text: "Confirm",
+          text: "Subscribe",
           onPress: async () => {
             try {
-              if (iapInitialized) {
-                // Fetch available subscriptions first
-                const availableSubscriptions = await PaymentService.getAvailableSubscriptions();
-                if (!availableSubscriptions || availableSubscriptions.length === 0) {
-                  throw new Error("No subscriptions available");
-                }
-
-                // Sử dụng thanh toán trong ứng dụng
-                await PaymentService.purchaseSubscription(pkg.type, duration);
+              if (!iapInitialized) {
+                throw new Error("Payment service not initialized");
               }
 
-              Alert.alert("Success", "Subscription updated successfully!", [
+              // Fetch available subscriptions first
+              const availableSubscriptions = await PaymentService.getAvailableSubscriptions();
+              if (!availableSubscriptions || availableSubscriptions.length === 0) {
+                throw new Error("No subscriptions available");
+              }
+
+              // Purchase subscription
+              await PaymentService.purchaseSubscription(pkg.type, duration);
+
+              Alert.alert("Success", "Subscription activated successfully!", [
                 {
                   text: "OK",
                   onPress: () => {
@@ -99,44 +104,13 @@ export default function PackagesScreen() {
                 },
               ]);
             } catch (error) {
-              let errorMessage = "Failed to purchase subscription";
-
-              if (error instanceof Error) {
-                if (error.message.includes("insufficient_funds")) {
-                  errorMessage = "Insufficient funds";
-                } else if (error.message.includes("invalid_package")) {
-                  errorMessage = "Invalid package selected";
-                } else if (error.message.includes("already_subscribed")) {
-                  errorMessage = "You already have an active subscription";
-                } else if (error.message.includes("No subscriptions available")) {
-                  errorMessage = "Unable to fetch available subscriptions. Please try again later.";
-                }
-              }
-
-              Alert.alert("Error", errorMessage);
-              console.error("Purchase error:", error);
+              Alert.alert("Error", JSON.stringify(error));
+              console.error("Subscription error:", error);
             }
           },
         },
       ],
     );
-  };
-
-  // Thêm nút khôi phục giao dịch (chủ yếu cho iOS)
-  const handleRestorePurchases = async () => {
-    try {
-      if (!iapInitialized) {
-        Alert.alert("Error", "Payment service not initialized");
-        return;
-      }
-
-      await PaymentService.restorePurchases();
-      fetchCurrentSubscription();
-      Alert.alert("Success", "Purchases restored successfully");
-    } catch (error) {
-      Alert.alert("Error", "Failed to restore purchases");
-      console.error("Restore error:", error);
-    }
   };
 
   const handlePackageAction = (pkg: Package) => {
