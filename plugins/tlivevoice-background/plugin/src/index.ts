@@ -1,6 +1,6 @@
-import { ConfigPlugin, withDangerousMod, withAndroidManifest } from '@expo/config-plugins';
-import path from 'path';
-import fs from 'fs-extra';
+const { withDangerousMod, withAndroidManifest } = require('@expo/config-plugins');
+const path = require('path');
+const fs = require('fs-extra');
 
 const filesToCopy = [
   'BackgroundServiceModule.kt',
@@ -11,7 +11,7 @@ const filesToCopy = [
   'BackgroundService.kt',
 ];
 
-const withTLiveVoiceBackground: ConfigPlugin = (config) => {
+const withTLiveVoiceBackground = (config) => {
   config = withDangerousMod(config, [
     'android',
     async (config) => {
@@ -43,7 +43,7 @@ const withTLiveVoiceBackground: ConfigPlugin = (config) => {
     if (app) {
       // Đảm bảo service BackgroundService đã được khai báo
       const hasService = (app.service || []).some(
-        (s: any) => s['$']['android:name'] === '.BackgroundService'
+        (s) => s['$']['android:name'] === '.BackgroundService'
       );
       if (!hasService) {
         app.service = app.service || [];
@@ -63,4 +63,4 @@ const withTLiveVoiceBackground: ConfigPlugin = (config) => {
   return config;
 };
 
-export default withTLiveVoiceBackground; 
+module.exports = withTLiveVoiceBackground; 
