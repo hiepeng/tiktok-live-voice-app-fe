@@ -57,4 +57,4 @@ class MainApplication : Application(), ReactApplication {
     super.onConfigurationChanged(newConfig)
     ApplicationLifecycleDispatcher.onConfigurationChanged(this, newConfig)
   }
-}
+} 
