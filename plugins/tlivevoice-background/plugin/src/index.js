@@ -11,10 +11,10 @@ const filesToCopy = [
   'BackgroundService.kt',
 ];
 
-const withTLiveVoiceBackground = (config: any) => {
+const withTLiveVoiceBackground = (config) => {
   config = withDangerousMod(config, [
     'android',
-    async (config: any) => {
+    async (config) => {
       const projectRoot = config.modRequest.projectRoot;
       const targetDir = path.join(
         projectRoot,
@@ -38,12 +38,27 @@ const withTLiveVoiceBackground = (config: any) => {
     },
   ]);
 
-  config = withAndroidManifest(config, async (config: any) => {
-    const app = config.modResults.manifest.application?.[0];
+  config = withAndroidManifest(config, async (config) => {
+    const manifest = config.modResults.manifest;
+    // Patch permissions
+    const permissions = manifest['uses-permission'] || [];
+    const requiredPermissions = [
+      { $: { 'android:name': 'android.permission.FOREGROUND_SERVICE' } },
+      { $: { 'android:name': 'android.permission.WAKE_LOCK' } },
+      { $: { 'android:name': 'android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS' } },
+    ];
+    for (const perm of requiredPermissions) {
+      if (!permissions.some((p) => p.$['android:name'] === perm.$['android:name'])) {
+        permissions.push(perm);
+      }
+    }
+    manifest['uses-permission'] = permissions;
+
+    // Patch service
+    const app = manifest.application?.[0];
     if (app) {
-      // Đảm bảo service BackgroundService đã được khai báo
       const hasService = (app.service || []).some(
-        (s: any) => s['$']['android:name'] === '.BackgroundService'
+        (s) => s['$']['android:name'] === '.BackgroundService'
       );
       if (!hasService) {
         app.service = app.service || [];
