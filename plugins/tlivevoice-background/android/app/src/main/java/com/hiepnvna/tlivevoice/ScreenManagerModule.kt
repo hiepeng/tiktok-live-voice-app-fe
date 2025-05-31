@@ -1,4 +1,4 @@
- package com.hiepnvna.tlivevoice
+package com.hiepnvna.tlivevoice
 
 import android.app.Activity
 import android.view.WindowManager
