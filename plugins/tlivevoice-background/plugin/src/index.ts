@@ -11,10 +11,10 @@ const filesToCopy = [
   'BackgroundService.kt',
 ];
 
-const withTLiveVoiceBackground = (config) => {
+const withTLiveVoiceBackground = (config: any) => {
   config = withDangerousMod(config, [
     'android',
-    async (config) => {
+    async (config: any) => {
       const projectRoot = config.modRequest.projectRoot;
       const targetDir = path.join(
         projectRoot,
@@ -38,12 +38,12 @@ const withTLiveVoiceBackground = (config) => {
     },
   ]);
 
-  config = withAndroidManifest(config, async (config) => {
+  config = withAndroidManifest(config, async (config: any) => {
     const app = config.modResults.manifest.application?.[0];
     if (app) {
       // Đảm bảo service BackgroundService đã được khai báo
       const hasService = (app.service || []).some(
-        (s) => s['$']['android:name'] === '.BackgroundService'
+        (s: any) => s['$']['android:name'] === '.BackgroundService'
       );
       if (!hasService) {
         app.service = app.service || [];
