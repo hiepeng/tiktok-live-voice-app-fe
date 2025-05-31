@@ -8,6 +8,8 @@ import { useSubscriptionStore } from "@/store/useSubscriptionStore";
 import { useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import Header from "../../components/Header";
+import { startBackgroundService, stopBackgroundService } from "../utils/BackgroundService";
+import { keepScreenOn, allowScreenOff } from "../utils/ScreenManager";
 
 interface Metadata {
   viewCount?: number;
@@ -45,6 +47,13 @@ const FullScreenWebView: React.FC = () => {
 
   useEffect(() => {
     fetchActiveUrls();
+    startBackgroundService();
+    keepScreenOn();
+
+    return () => {
+      stopBackgroundService();
+      allowScreenOff();
+    };
   }, []);
 
   useEffect(() => {
@@ -140,15 +149,13 @@ const FullScreenWebView: React.FC = () => {
           <Text style={styles.title}>TikTok Live Comment Reader</Text>
 
           <View style={styles.inputSection}>
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                value={newUrl}
-                onChangeText={setNewUrl}
-                placeholder="Enter TikTok Live URL"
-                placeholderTextColor="#999"
-              />
-            </View>
+            <TextInput
+              style={styles.input}
+              value={newUrl}
+              onChangeText={setNewUrl}
+              placeholder="Enter TikTok Live URL"
+              placeholderTextColor="#999"
+            />
             <TouchableOpacity style={[styles.button, { backgroundColor: "#4CAF50" }]} onPress={handleAddUrl}>
               <Text style={styles.buttonText}>Add Link</Text>
             </TouchableOpacity>

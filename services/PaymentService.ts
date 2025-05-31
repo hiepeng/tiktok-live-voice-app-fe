@@ -144,7 +144,7 @@ class PaymentService {
         ...Object.values(SUBSCRIPTION_SKUS[platform].standard),
         ...Object.values(SUBSCRIPTION_SKUS[platform].premium)
       ];
-      console.log("Requesting products with SKUs:", skus);
+      // console.log("Requesting products with SKUs:", skus);
       
       const products = await getProducts({ skus });
       console.log("Received products:", JSON.stringify(products, null, 2));

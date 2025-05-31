@@ -83,7 +83,6 @@ export default function PackagesScreen() {
               if (iapInitialized) {
                 // Fetch available subscriptions first
                 const availableSubscriptions = await PaymentService.getAvailableSubscriptions();
-                console.log("availableSubscriptions", availableSubscriptions);
                 if (!availableSubscriptions || availableSubscriptions.length === 0) {
                   throw new Error("No subscriptions available");
                 }

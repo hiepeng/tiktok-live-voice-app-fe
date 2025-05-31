@@ -48,7 +48,8 @@
         {
           "paymentProvider": "both"
         }
-      ]
+      ],
+      "react-native-screens"
     ],
     "experiments": {
       "typedRoutes": true
