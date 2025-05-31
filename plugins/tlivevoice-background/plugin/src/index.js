@@ -1,4 +1,4 @@
-const { withDangerousMod, withAndroidManifest } = require('@expo/config-plugins');
+const { withDangerousMod, withAndroidManifest, withInfoPlist } = require('@expo/config-plugins');
 const path = require('path');
 const fs = require('fs-extra');
 
@@ -72,6 +72,19 @@ const withTLiveVoiceBackground = (config) => {
         });
       }
     }
+    return config;
+  });
+
+  config = withInfoPlist(config, (config) => {
+    // Patch Info.plist for iOS
+    config.modResults.UIRequiresPersistentWiFi = true;
+    config.modResults.UIRequiresFullScreen = true;
+    config.modResults.UIBackgroundModes = [
+      'audio',
+      'fetch',
+      'processing',
+      'remote-notification',
+    ];
     return config;
   });
 
