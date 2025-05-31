@@ -49,7 +49,6 @@
           "paymentProvider": "both"
         }
       ],
-      "react-native-screens",
       "./plugins/tlivevoice-background"
     ],
     "experiments": {
