@@ -13,6 +13,7 @@ import {
 } from "react-native-iap";
 import { api } from "./api";
 import { SubscriptionType } from "@/interfaces/package.interface";
+import { useSubscriptionStore } from "@/store/useSubscriptionStore";
 
 // Định nghĩa ID sản phẩm cho từng nền tảng
 const SUBSCRIPTION_SKUS = {
@@ -79,7 +80,8 @@ class PaymentService {
           const receipt = purchase.transactionReceipt;
           if (receipt) {
             try {
-              await this.verifySubscriptionWithBackend(purchase);
+              const data = await this.verifySubscriptionWithBackend(purchase);
+              console.log("data", data);
             } catch (error) {
               console.error("Error verifying subscription with backend", error);
             } finally {
@@ -88,8 +90,6 @@ class PaymentService {
             }
           }
         }
-
-        // console.log("duplicate", Object.values(duplicate));
       });
 
       let duplicateError: Record<string, number> = {};
@@ -100,7 +100,6 @@ class PaymentService {
           duplicateError[JSON.stringify(error)] = 1;
           console.error("Subscription purchase error", error);
         }
-        // console.log("duplicateError", Object.values(duplicateError));
       });
 
       this.isInitialized = true;
@@ -130,6 +129,31 @@ class PaymentService {
     } catch (error) {
       console.error("Failed to get subscriptions:", error);
       throw error;
+    }
+  }
+
+  // Xác thực gói cước với backend
+  private async verifySubscriptionWithBackend(purchase: ProductPurchase | SubscriptionPurchase): Promise<any> {
+    try {
+      console.log("purchase:", purchase);
+      const response: any = await api.post("/subscriptions/verify-purchase", {
+        productId: purchase.productId,
+        transactionId: purchase.transactionId,
+        transactionReceipt: purchase.transactionReceipt,
+        platform: Platform.OS,
+      });
+      console.log("response", response);
+      if (response._id) {
+        const store = useSubscriptionStore.getState();
+        await store.fetchCurrentSubscription();
+      }
+      return response;
+    } catch (error) {
+      console.error("Error verifying subscription with backend", error);
+      throw error;
+    } finally {
+      const store = useSubscriptionStore.getState();
+      store.setPurchasing(false);
     }
   }
 
@@ -169,28 +193,14 @@ class PaymentService {
         ios: { typeSku },
       }) as { skus: string[]; subscriptionOffers: any[] } | { sku: string };
 
+      const store = useSubscriptionStore.getState();
+      store.setPurchasing(true);
       await requestSubscription(params as Parameters<typeof requestSubscription>[0]);
       return true;
     } catch (error: any) {
+      const store = useSubscriptionStore.getState();
+      store.setPurchasing(false);
       console.error("Failed to purchase subscription", error);
-      throw error;
-    }
-  }
-
-  // Xác thực gói cước với backend
-  private async verifySubscriptionWithBackend(purchase: ProductPurchase | SubscriptionPurchase): Promise<any> {
-    try {
-      console.log("purchase:", purchase);
-      const response: any = await api.post("/subscriptions/verify-purchase", {
-        productId: purchase.productId,
-        transactionId: purchase.transactionId,
-        transactionReceipt: purchase.transactionReceipt,
-        platform: Platform.OS,
-      });
-
-      return response.data;
-    } catch (error) {
-      console.error("Error verifying subscription with backend", error);
       throw error;
     }
   }

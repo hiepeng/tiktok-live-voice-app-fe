@@ -9,14 +9,8 @@ import { Package, SubscriptionType } from "@/interfaces/package.interface";
 import PaymentService from "@/services/PaymentService";
 
 export default function PackagesScreen() {
-  const {
-    currentSubscription,
-    packages,
-    isLoading,
-    error,
-    fetchCurrentSubscription,
-    fetchPackages,
-  } = useSubscriptionStore();
+  const { currentSubscription, packages, isLoading, isPurchasing, error, fetchCurrentSubscription, fetchPackages } =
+    useSubscriptionStore();
 
   const [iapInitialized, setIapInitialized] = useState(false);
 
@@ -69,7 +63,7 @@ export default function PackagesScreen() {
 
   const confirmPurchase = async (pkg: Package, duration: 1 | 6 | 12) => {
     const price = pkg.price * duration * (duration === 1 ? 1 : duration === 6 ? 0.9 : 0.8);
-    
+
     Alert.alert(
       "Confirm Subscription",
       `Subscribe to ${pkg.name} for ${duration} ${duration === 1 ? "month" : "months"}?\n\nTotal: $${price.toFixed(2)}`,
@@ -94,15 +88,6 @@ export default function PackagesScreen() {
 
               // Purchase subscription
               await PaymentService.purchaseSubscription(pkg.type, duration);
-
-              Alert.alert("Success", "Subscription activated successfully!", [
-                {
-                  text: "OK",
-                  onPress: () => {
-                    fetchCurrentSubscription();
-                  },
-                },
-              ]);
             } catch (error) {
               Alert.alert("Error", JSON.stringify(error));
               console.error("Subscription error:", error);
@@ -233,9 +218,10 @@ export default function PackagesScreen() {
           styles.buyButton,
           item.type === SubscriptionType.CUSTOM && styles.customButton,
           currentSubscription?.type === item.type && styles.currentPlanButton,
+          isPurchasing && styles.disabledButton,
         ]}
         onPress={() => handlePackageAction(item)}
-        disabled={currentSubscription?.type === item.type}
+        disabled={currentSubscription?.type === item.type || isPurchasing}
       >
         <Text
           style={[
@@ -244,11 +230,13 @@ export default function PackagesScreen() {
             currentSubscription?.type === item.type && { color: "#fff" },
           ]}
         >
-          {item.type === SubscriptionType.CUSTOM
-            ? "Contact Us"
-            : currentSubscription?.type === item.type
-              ? "Current Plan"
-              : "Choose Plan"}
+          {isPurchasing
+            ? "Processing..."
+            : item.type === SubscriptionType.CUSTOM
+              ? "Contact Us"
+              : currentSubscription?.type === item.type
+                ? "Current Plan"
+                : "Choose Plan"}
         </Text>
       </TouchableOpacity>
     </View>
@@ -425,5 +413,8 @@ const styles = StyleSheet.create({
   restoreButtonText: {
     color: "#0a7ea4",
     fontSize: 16,
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
 });

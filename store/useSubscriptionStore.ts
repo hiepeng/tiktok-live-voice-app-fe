@@ -9,18 +9,23 @@ interface CurrentPackage extends Package {
 interface SubscriptionState {
   currentSubscription: CurrentPackage | null;
   isLoading: boolean;
+  isPurchasing: boolean;
   error: string | null;
   packages: Package[];
   
   fetchCurrentSubscription: () => Promise<void>;
   fetchPackages: () => Promise<void>;
+  setPurchasing: (loading: boolean) => void;
 }
 
 export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   currentSubscription: null,
   isLoading: false,
+  isPurchasing: false,
   error: null,
   packages: [],
+
+  setPurchasing: (loading: boolean) => set({ isPurchasing: loading }),
 
   fetchCurrentSubscription: async () => {
     try {
