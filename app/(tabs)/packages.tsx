@@ -221,7 +221,7 @@ export default function PackagesScreen() {
           isPurchasing && styles.disabledButton,
         ]}
         onPress={() => handlePackageAction(item)}
-        disabled={currentSubscription?.type === item.type || isPurchasing}
+        disabled={isPurchasing}
       >
         <Text
           style={[
@@ -235,7 +235,7 @@ export default function PackagesScreen() {
             : item.type === SubscriptionType.CUSTOM
               ? "Contact Us"
               : currentSubscription?.type === item.type
-                ? "Current Plan"
+                ? "Upgrade"
                 : "Choose Plan"}
         </Text>
       </TouchableOpacity>
