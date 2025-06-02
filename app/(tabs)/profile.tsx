@@ -8,6 +8,7 @@ import CommentHistory from "../../components/CommentHistory";
 import Header from "../../components/Header";
 import { useSubscriptionStore } from "@/store/useSubscriptionStore";
 import SubscriptionHistory from "@/components/SubscriptionHistory";
+import { SubscriptionType } from "@/interfaces/package.interface";
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -23,6 +24,63 @@ export default function ProfileScreen() {
     router.replace("/auth/login");
   };
 
+  const renderCurrentPackage = () => {
+    if (isLoading) {
+      return (
+        <View style={styles.currentPackageContainer}>
+          <Text style={styles.loadingText}>Loading subscription info...</Text>
+        </View>
+      );
+    }
+
+    if (error) {
+      return (
+        <View style={styles.currentPackageContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      );
+    }
+
+    if (!currentSubscription) {
+      return (
+        <View style={styles.currentPackageContainer}>
+          <Text style={styles.currentPackageTitle}>Current Package</Text>
+          <Text style={styles.currentPackageName}>Free Plan</Text>
+          <Text style={styles.currentPackageType}>Basic features</Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.currentPackageContainer}>
+        <View style={styles.currentPackageHeader}>
+          <Text style={styles.currentPackageTitle}>Current Package</Text>
+          {currentSubscription.type !== SubscriptionType.FREE && (
+            <View style={[styles.statusBadge, { backgroundColor: "#4CAF50" }]}>
+              <Text style={styles.statusText}>Active</Text>
+            </View>
+          )}
+        </View>
+        <Text style={styles.currentPackageName}>{currentSubscription.name}</Text>
+        <Text style={styles.currentPackageType}>
+          {currentSubscription.maxDuration === -1
+            ? "Unlimited stream duration"
+            : `${currentSubscription.maxDuration} minutes per stream`}
+        </Text>
+        <Text style={styles.currentPackageType}>
+          {`${currentSubscription.maxConcurrentStreams} concurrent ${
+            currentSubscription.maxConcurrentStreams > 1 ? "streams" : "stream"
+          }`}
+        </Text>
+        {currentSubscription.type !== SubscriptionType.FREE && currentSubscription.endDate && (
+          <Text style={styles.currentPackageExpire}>
+            Expires: {currentSubscription.endDate.toLocaleDateString()}
+          </Text>
+        )}
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <Header title="Profile" />
@@ -36,15 +94,8 @@ export default function ProfileScreen() {
         </View>
       </View>
       <View style={styles.container}>
-        {/* Hiển thị current package */}
-        {currentSubscription && (
-          <View style={styles.currentPackageContainer}>
-            <Text style={styles.currentPackageTitle}>Current Package</Text>
-            <Text style={styles.currentPackageName}>{currentSubscription.name}</Text>
-            <Text style={styles.currentPackageType}>{currentSubscription.type}</Text>
-            <Text style={styles.currentPackageExpire}>Expires: {currentSubscription.expireAt ? new Date(currentSubscription.expireAt).toLocaleDateString() : 'N/A'}</Text>
-          </View>
-        )}
+        {renderCurrentPackage()}
+
         {/* Profile Actions */}
         <View style={styles.actionsContainer}>
           <Pressable style={styles.actionButton} onPress={() => setShowSubscriptionHistory(true)}>
@@ -171,11 +222,16 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
+  currentPackageHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
   currentPackageTitle: {
     fontSize: 18,
     fontWeight: "600",
     color: "#0a7ea4",
-    marginBottom: 10,
   },
   currentPackageName: {
     fontSize: 16,
@@ -191,5 +247,26 @@ const styles = StyleSheet.create({
   currentPackageExpire: {
     fontSize: 16,
     color: "#666",
+    marginTop: 5,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  loadingText: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+  },
+  errorText: {
+    fontSize: 16,
+    color: "#ff4444",
+    textAlign: "center",
   },
 });

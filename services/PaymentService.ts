@@ -10,9 +10,10 @@ import {
   SubscriptionPurchase,
   PurchaseError,
   endConnection,
+  Subscription,
 } from "react-native-iap";
 import { api } from "./api";
-import { SubscriptionType } from "@/interfaces/package.interface";
+import { Package, SubscriptionType } from "@/interfaces/package.interface";
 import { useSubscriptionStore } from "@/store/useSubscriptionStore";
 
 // Định nghĩa ID sản phẩm cho từng nền tảng
@@ -28,6 +29,37 @@ const SUBSCRIPTION_SKUS = {
     premium: ["premium1", "premium6", "premium12"],
   },
 };
+
+// Type definitions for subscription data
+interface PricingPhase {
+  recurrenceMode: number;
+  priceAmountMicros: string;
+  billingCycleCount: number;
+  billingPeriod: string;
+  priceCurrencyCode: string;
+  formattedPrice: string;
+}
+
+interface PricingPhases {
+  pricingPhaseList: PricingPhase[];
+}
+
+interface SubscriptionOffer {
+  pricingPhases: PricingPhases;
+  offerToken: string;
+  offerTags: string[];
+  offerId: string | null;
+  basePlanId: string;
+}
+
+interface SubscriptionWithOffers {
+  productId: string;
+  name: string;
+  description: string;
+  title: string;
+  platform: string;
+  subscriptionOfferDetails: SubscriptionOffer[];
+}
 
 // Helper function to get subscription SKU
 const getSubscriptionSku = (type: SubscriptionType, durationMonths: 1 | 6 | 12): [string, string] => {
@@ -48,12 +80,63 @@ class PaymentService {
   private purchaseUpdateSubscription: any;
   private purchaseErrorSubscription: any;
   private isInitialized: boolean = false;
+  private availableSubscriptions: SubscriptionWithOffers[] = [];
 
-  // Get active packages from backend
-  async getActivePackages(): Promise<any[]> {
+  // Get active packages from backend and merge with IAP prices
+  async getActivePackages(): Promise<Package[]> {
     try {
-      const response: any = await api.get("/packages");
-      return response;
+      if (!this.isInitialized) {
+        await this.initializeIAP();
+      }
+
+      // Get packages from backend
+      const response: Package[] = await api.get("/packages");
+
+      // Get prices from IAP
+      const platform = Platform.OS as "ios" | "android";
+      const skus = Object.keys(SUBSCRIPTION_SKUS[platform]);
+      const subscriptions = (await getSubscriptions({ skus })) as SubscriptionWithOffers[];
+      this.availableSubscriptions = subscriptions;
+
+      // Update prices from IAP
+      return response.map(pkg => {
+        if (pkg.type === SubscriptionType.FREE || pkg.type === SubscriptionType.CUSTOM) {
+          return pkg;
+        }
+
+        const typeMap = {
+          [SubscriptionType.BASIC]: "basic",
+          [SubscriptionType.STANDARD]: "standard",
+          [SubscriptionType.PREMIUM]: "premium",
+        };
+
+        const typeSku = typeMap[pkg.type];
+        const subscription = subscriptions.find(sub => sub.productId === typeSku);
+
+        if (subscription) {
+          // Get monthly price from subscription offer details
+          const monthlyOffer = subscription.subscriptionOfferDetails.find(offer => offer.basePlanId === `${typeSku}1`);
+
+
+
+          if (monthlyOffer) {
+            const pricePhase = monthlyOffer.pricingPhases.pricingPhaseList[0];
+            const price = pricePhase.priceAmountMicros ? parseFloat(pricePhase.priceAmountMicros) / 1000000 : 0;
+            
+            const value = {
+              subscriptionOfferDetails: subscription.subscriptionOfferDetails,
+              ...pkg,
+              basePrice: price,
+              baseFormattedPrice: pricePhase.formattedPrice,
+              basePriceCurrencyCode: pricePhase.priceCurrencyCode,
+            };
+
+            return value;
+          }
+        }
+
+        return { ...pkg, price: 0 };
+      });
     } catch (error) {
       console.error("Failed to fetch active packages", error);
       throw error;
@@ -167,14 +250,14 @@ class PaymentService {
       const [typeSku, sku] = getSubscriptionSku(type, durationMonths);
       console.log("Attempting to purchase subscription:", sku);
 
-      const [availableSubscriptions] = await getSubscriptions({ skus: [typeSku] });
-      if (!availableSubscriptions) {
+      const subscription = this.availableSubscriptions.find(sub => sub.productId === typeSku);
+      if (!subscription) {
         throw new Error("No subscriptions available");
       }
 
-      const offerToken = (availableSubscriptions as any).subscriptionOfferDetails.find(
+      const offerToken = (subscription as any).subscriptionOfferDetails.find(
         (item: any) => item.basePlanId === sku,
-      ).offerToken;
+      )?.offerToken;
 
       if (!offerToken) {
         throw new Error("No offer token available");

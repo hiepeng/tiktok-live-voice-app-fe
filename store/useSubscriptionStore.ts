@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { api } from '../services/api';
 import { Package, SubscriptionType } from '../interfaces/package.interface';
+import PaymentService from '../services/PaymentService';
 
 interface CurrentPackage extends Package {
   endDate?: Date;
@@ -46,8 +47,8 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   fetchPackages: async () => {
     try {
       set({ isLoading: true });
-      const response = await api.get<Package[]>('/packages');
-      set({ packages: response, error: null });
+      const packages = await PaymentService.getActivePackages();
+      set({ packages, error: null });
     } catch (error) {
       set({ error: 'Failed to fetch packages' });
     } finally {
